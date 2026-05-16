@@ -20,7 +20,8 @@ Existing project Location -> Browse (to cloned directory) -> Finish
 Open a terminal
 idf.py build or idf.py build flash monitor
 
-4. Install managed dependencies and build:
+OR
+3. Install managed dependencies and build:
 
 ```bash
 idf.py update-dependencies
