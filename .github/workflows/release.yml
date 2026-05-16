@@ -59,7 +59,7 @@ jobs:
       - name: Prepare release assets
         run: |
           # The binary is named after your CMake project() name in CMakeLists.txt.
-          # If you rename your project from 'my_app', update the filename below to match.
+          # If you rename your project (IN CMAKE) from 'my_app', update the filename below to match.
           cp build/my_app.bin build/firmware.bin
 
       - name: Create GitHub Release
