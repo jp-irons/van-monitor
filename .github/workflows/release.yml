@@ -60,7 +60,7 @@ jobs:
         run: |
           # The binary is named after your CMake project() name in CMakeLists.txt.
           # If you rename your project from 'my_app', update the filename below to match.
-          cp build/van-monitor.bin build/firmware.bin
+          cp build/my-app.bin build/firmware.bin
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
