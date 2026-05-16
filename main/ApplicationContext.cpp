@@ -40,10 +40,10 @@ void ApplicationContext::start() {
     // ── Configure pull-based OTA ──────────────────────────────────────────
     // Uncomment and fill in your repo's release download URL.
     //
-    // fw_.setOtaPullConfig({
-    //     .baseUrl        = "https://github.com/YOUR_ORG/YOUR_REPO/releases/latest/download",
-    //     .checkIntervalS = 3600,
-    // });
+     fw_.setOtaPullConfig({
+         .baseUrl        = "https://github.com/jp-irons/van-monitor/releases/latest/download",
+         .checkIntervalS = 3600,
+     });
 
     // ── Start the framework (WiFi, server, OTA, …) ────────────────────────
     fw_.start();
