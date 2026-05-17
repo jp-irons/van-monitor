@@ -19,28 +19,27 @@ namespace app {
  * To add app-specific API handlers, declare them as members here, then
  * register them in start() via fw_.addRoute(...).
  */
-class ApplicationContext {
-  public:
-    static constexpr const char* TAG = "ApplicationContext";
+ class ApplicationContext {
+   public:
+     static constexpr const char* TAG = "ApplicationContext";
 
-    explicit ApplicationContext(framework::FrameworkContext& fw);
-    ~ApplicationContext();
+     explicit ApplicationContext(framework::FrameworkContext& fw);
+     ~ApplicationContext();
 
-    void start();
-    void loop();
+     void start();
+     void loop();
 
-  private:
-    framework::FrameworkContext& fw_;
+   private:
+     framework::FrameworkContext& fw_;
 
-    // App embedded file table + handler.
-    // appFileTable_ MUST be declared before appFileHandler_ so it is
-    // initialised first (appFileHandler_ holds a reference to it).
-    AppFileTable                          appFileTable_;
-    framework_files::EmbeddedFileHandler  appFileHandler_;
+     // App embedded file table + handler.
+     // appFileTable_ MUST be declared before appFileHandler_ so it is
+     // initialised first (appFileHandler_ holds a reference to it).
+     AppFileTable                          appFileTable_;
+     framework_files::EmbeddedFileHandler  appFileHandler_;
 
-    // temperatureHandler_ is declared after fw_ so that fw_.getDevice() is
-    // valid when the initialiser list runs.
-    TemperatureHandler temperatureHandler_;
-};
-
+     // temperatureHandler_ is declared after fw_ so that fw_.getDevice() is
+     // valid when the initialiser list runs.
+     TemperatureHandler temperatureHandler_;
+ };
 } // namespace app
