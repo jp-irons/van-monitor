@@ -10,6 +10,7 @@ idf_component_register(
     REQUIRES
         auth
         device
+        display
         esp_platform
         network_store
         framework

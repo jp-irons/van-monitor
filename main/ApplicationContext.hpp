@@ -2,6 +2,7 @@
 
 #include "AppFileTable.hpp"
 #include "TemperatureHandler.hpp"
+#include "DisplayContext.hpp"
 #include "framework/FrameworkContext.hpp"
 #include "framework_files/EmbeddedFileHandler.hpp"
 
@@ -41,5 +42,10 @@ namespace app {
      // temperatureHandler_ is declared after fw_ so that fw_.getDevice() is
      // valid when the initialiser list runs.
      TemperatureHandler temperatureHandler_;
+
+     // display_ is declared last — it has no dependency on fw_ at construction
+     // time but start() must be called after fw_.start() to ensure NVS is ready
+     // (CalibrateScreen reads calibration values from NVS on first load).
+     display::DisplayContext display_;
  };
 } // namespace app

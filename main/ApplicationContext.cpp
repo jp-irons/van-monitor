@@ -11,7 +11,8 @@ namespace app {
 	    : fw_(fw)
 	    , appFileTable_()
 	    , appFileHandler_("", "index.html", appFileTable_)
-	    , temperatureHandler_(fw.getDevice()) {
+	    , temperatureHandler_(fw.getDevice())
+	    , display_() {
 	    log.debug("constructor");
 	}
 
@@ -54,7 +55,7 @@ namespace app {
 	    //                      When false, autoUpdateEnabled is always authoritative
 	    //                      and the toggle is hidden.
 	    fw_.setOtaPullConfig({
-	        .baseUrl           = "https://github.com/jp-irons/embedded-framework/releases/latest/download",
+	        .baseUrl           = "https://github.com/jp-irons/van-monitor/releases/latest/download",
 	        .checkIntervalS    = 3600,
 	        .autoUpdateEnabled = false,
 	        .uiSettable        = true,
@@ -68,15 +69,21 @@ namespace app {
 	    // To suppress the suffix pass wifi_manager::SuffixPolicy::None, or to use
 	    // all 6 MAC bytes pass wifi_manager::SuffixPolicy::MacFull — both require
 	    // #include "wifi_manager/WiFiTypes.hpp".
-	    fw_.setHostnameConfig("esp-fw");
-	    fw_.setApSsidConfig("EspFramework");
-	    fw_.setApPassword("espframework");
+	    fw_.setHostnameConfig("van-monitor", wifi_manager::SuffixPolicy::None);
+	    fw_.setApSsidConfig("VanMonitor", wifi_manager::SuffixPolicy::None);
+	    fw_.setApPassword("vanmonitor");
 		
 	    // ── Start the framework (WiFi, server, OTA, …) ────────────────────────
 	    fw_.start();
+
+	    // ── Start the display (NVS must be ready before this) ─────────────────
+	    display_.start();
 	}
 
 	void ApplicationContext::loop() {
 	    // Optional per-tick work.  The main loop calls this every 50 ms.
+	    display_.loop();
+	    // TODO: read water sensor ADC, push to display_.updateWaterLevel()
+	    // TODO: receive Venus OS MQTT data, push to display_.updateBattery() / updateSystem()
 	}
 } // namespace app

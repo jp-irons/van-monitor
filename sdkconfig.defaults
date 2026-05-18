@@ -20,3 +20,21 @@ CONFIG_MBEDTLS_DYNAMIC_BUFFER=y
 
 # Power management — DFS max=160 MHz, min=80 MHz; prerequisite for light sleep
 CONFIG_PM_ENABLE=y
+
+# ── Display / touch (SpotPear ESP32-S3-Touch-LCD-2 target board) ──────────────
+# These must be applied to sdkconfig when migrating from the dev board.
+# SPI2 host is used for the ST7789T3 LCD (40 MHz, DMA enabled via SPI_DMA_CH_AUTO).
+# I2C0 is used for the CST816D touch controller (400 kHz, GPIOs 15/7).
+# LVGL frame buffers are allocated in PSRAM; DMA buffers remain in internal SRAM.
+CONFIG_SPI_MASTER_ISR_IN_IRAM=y
+CONFIG_LVGL_TASK_STACK_SIZE=8192
+CONFIG_LVGL_TASK_PRIORITY=4
+
+# LVGL Montserrat fonts used by the display component
+# (lv_font_montserrat_14 is the LVGL default and usually enabled already)
+CONFIG_LV_FONT_MONTSERRAT_10=y
+CONFIG_LV_FONT_MONTSERRAT_12=y
+CONFIG_LV_FONT_MONTSERRAT_14=y
+CONFIG_LV_FONT_MONTSERRAT_16=y
+CONFIG_LV_FONT_MONTSERRAT_22=y
+CONFIG_LV_FONT_MONTSERRAT_28=y

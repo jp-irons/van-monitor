@@ -1,0 +1,19 @@
+idf_component_register(
+    SRCS
+        "DisplayContext.cpp"
+        "screens/DashboardScreen.cpp"
+        "screens/SystemScreen.cpp"
+        "screens/CalibrateScreen.cpp"
+        "drivers/cst816d.cpp"
+    INCLUDE_DIRS
+        "."
+    REQUIRES
+        driver
+        esp_lcd
+        esp_timer
+        freertos
+        esp_lvgl_port
+        logger
+    PRIV_REQUIRES
+        nvs_flash
+)
