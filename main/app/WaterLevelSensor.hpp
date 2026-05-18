@@ -73,6 +73,12 @@ private:
     uint32_t tankLitres_  {200};
     uint32_t lastCalTick_ {0};
 
+    // IIR low-pass filter state.  Negative sentinel means "not yet seeded":
+    // the first valid reading is used directly rather than blending from 0 V.
+    // α = 0.99 at a 50 ms tick gives τ ≈ 5 s.
+    static constexpr float IIR_ALPHA    = 0.99f;
+    float                  smoothedVolts_ {-1.0f};
+
     // ── Helpers ───────────────────────────────────────────────────────────
 
     /** Read and refresh the NVS 2-point calibration into member fields. */

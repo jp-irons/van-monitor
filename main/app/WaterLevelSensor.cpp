@@ -102,18 +102,25 @@ void WaterLevelSensor::poll(display::WaterData& out, uint32_t tick) {
 
     float volts = adcToVoltage(raw);
 
+    // IIR low-pass — seed on first reading, blend thereafter
+    if (smoothedVolts_ < 0.0f) {
+        smoothedVolts_ = volts;
+    } else {
+        smoothedVolts_ = IIR_ALPHA * smoothedVolts_ + (1.0f - IIR_ALPHA) * volts;
+    }
+
     float span   = calVFull_ - calVEmpty_;
-    float levelM = (span > 0.01f) ? (volts - calVEmpty_) / span * 2.0f : 0.0f;
+    float levelM = (span > 0.01f) ? (smoothedVolts_ - calVEmpty_) / span * 2.0f : 0.0f;
     levelM = std::max(0.0f, std::min(2.0f, levelM));
 
     out.rawAdc    = (uint16_t)raw;
-    out.rawVolts  = volts;
+    out.rawVolts  = smoothedVolts_;
     out.computedM = levelM;
     out.pct       = levelM / 2.0f * 100.0f;
     out.litres    = levelM / 2.0f * static_cast<float>(tankLitres_);
 
-    log.debug("raw=%d  %.3fV  %.3fm  %.1f%%  %.1fL",
-              raw, volts, levelM, out.pct, out.litres);
+    log.debug("raw=%d  raw=%.3fV  smooth=%.3fV  %.3fm  %.1f%%  %.1fL",
+              raw, volts, smoothedVolts_, levelM, out.pct, out.litres);
 }
 
 // ── sampleAdc ─────────────────────────────────────────────────────────────────
