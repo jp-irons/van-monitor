@@ -5,9 +5,12 @@
 #include "CalibrateHandler.hpp"
 #include "StatusHandler.hpp"
 #include "TemperatureHandler.hpp"
+#include "WaterLevelSensor.hpp"
 #include "DisplayContext.hpp"
 #include "framework/FrameworkContext.hpp"
 #include "framework_files/EmbeddedFileHandler.hpp"
+
+#include <cstdint>
 
 namespace app {
 
@@ -46,11 +49,19 @@ namespace app {
      // valid when the initialiser list runs.
      TemperatureHandler temperatureHandler_;
 
+     // waterLevelSensor_ has no fw_ dependency at construction time.
+     // init() is called in start(), after NVS is ready.
+     WaterLevelSensor waterLevelSensor_;
+
      // appState_ holds the latest sensor snapshot; declare before the handlers
      // that reference it so the object is valid when their constructors run.
      AppState            appState_;
      StatusHandler       statusHandler_;
      CalibrateHandler    calibrateHandler_;
+
+     // Loop tick counter — passed to WaterLevelSensor::poll() so it can
+     // throttle NVS calibration refreshes without its own timer.
+     uint32_t loopTick_ {0};
 
      // display_ is declared last — it has no dependency on fw_ at construction
      // time but start() must be called after fw_.start() to ensure NVS is ready

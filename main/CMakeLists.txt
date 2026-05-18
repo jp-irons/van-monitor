@@ -8,6 +8,7 @@ idf_component_register(
         app/TemperatureHandler.cpp
         app/StatusHandler.cpp
         app/CalibrateHandler.cpp
+        app/WaterLevelSensor.cpp
         app_files/AppFileTable.cpp
     REQUIRES
         auth
@@ -22,6 +23,7 @@ idf_component_register(
         logger
         ota
         wifi_manager
+        esp_adc
         esp_driver_tsens
     INCLUDE_DIRS
         .

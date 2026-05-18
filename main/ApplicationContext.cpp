@@ -12,6 +12,7 @@ namespace app {
 	    , appFileTable_()
 	    , appFileHandler_("", "index.html", appFileTable_)
 	    , temperatureHandler_(fw.getDevice())
+	    , waterLevelSensor_()
 	    , appState_{}
 	    , statusHandler_(appState_)
 	    , calibrateHandler_(appState_)
@@ -83,12 +84,23 @@ namespace app {
 
 	    // ── Start the display (NVS must be ready before this) ─────────────────
 	    display_.start();
+
+	    // ── Initialise water level ADC ────────────────────────────────────────
+	    // Called after fw_.start() so NVS is guaranteed initialised; init()
+	    // calls loadCalibrationFromNvs() immediately to prime the cal values.
+	    waterLevelSensor_.init();
 	}
 
 	void ApplicationContext::loop() {
 	    // Optional per-tick work.  The main loop calls this every 50 ms.
 	    display_.loop();
-	    // TODO: read water sensor ADC, push to display_.updateWaterLevel()
+
+	    // Poll ADC, update shared state, push to display
+	    waterLevelSensor_.poll(appState_.water, loopTick_);
+	    display_.updateWaterLevel(appState_.water);
+
 	    // TODO: receive Venus OS MQTT data, push to display_.updateBattery() / updateSystem()
+
+	    loopTick_++;
 	}
 } // namespace app
