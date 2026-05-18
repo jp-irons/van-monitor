@@ -5,7 +5,6 @@
 #include "screens/CalibrateScreen.hpp"
 
 #include "esp_lcd_panel_io.h"
-#include "esp_lcd_panel_ops.h"
 #include "driver/i2c_master.h"
 #include "lvgl.h"
 

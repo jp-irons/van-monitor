@@ -1,3 +1,9 @@
 CompileFlags:
   CompilationDatabase: C:\Users\jon\Workspace\ESP\van-monitor\build
   Remove: [-m*, -f*]
+
+---
+If:
+  PathMatch: framework/main/.*
+Diagnostics:
+  Suppress: '*'
