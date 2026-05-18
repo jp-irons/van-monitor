@@ -1,7 +1,7 @@
 #pragma once
 
-#include "driver/gpio.h"
-#include "driver/i2c_master.h"
+#include "driver/gpio.h"       // IWYU pragma: keep — gpio_num_t used in cst816d_init signature
+#include "driver/i2c_master.h" // IWYU pragma: keep — i2c_master_bus_handle_t used in cst816d_init signature
 #include "esp_err.h"
 #include <cstdint>
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "lvgl.h"
+#include "lvgl.h" // IWYU pragma: keep — lv_obj_t* used in member declarations
 
 namespace display {
 
