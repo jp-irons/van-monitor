@@ -4,6 +4,8 @@
 #include "device/DeviceInterface.hpp"
 #include "http/HttpHandler.hpp"
 
+namespace app {
+
 /**
  * Reads the ESP32-S3 internal temperature sensor and returns a JSON response:
  *   {"celsius": 42.5}
@@ -14,6 +16,8 @@
  */
 class TemperatureHandler : public http::HttpHandler {
   public:
+    static constexpr const char* TAG = "TemperatureHandler";
+
     explicit TemperatureHandler(device::DeviceInterface& device);
     ~TemperatureHandler();
 
@@ -22,3 +26,5 @@ class TemperatureHandler : public http::HttpHandler {
   private:
     device::DeviceInterface& device_;
 };
+
+} // namespace app

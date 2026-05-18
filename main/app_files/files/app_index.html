@@ -31,13 +31,90 @@
       </div>
     </nav>
 
-    <h2 class="app-card-title">Device Temperature</h2>
-    <div class="app-temp-display">
-      <span id="temp-value" class="app-temp-value">—</span>
-      <span class="app-temp-unit">°C</span>
+    <!-- Tab bar -->
+    <div class="app-tabs">
+      <button class="app-tab active" data-tab="dashboard">Dashboard</button>
+      <button class="app-tab"        data-tab="calibrate">Calibrate</button>
+      <button class="app-tab"        data-tab="system">System</button>
     </div>
-    <p id="temp-status" class="app-temp-status">Loading…</p>
-    <button id="refresh-btn" class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700" onclick="app.refresh()">Refresh</button>
+
+    <!-- ── Dashboard tab ───────────────────────────────────────────────────── -->
+    <div id="tab-dashboard" class="app-tab-panel">
+
+      <div class="app-section-title">Water</div>
+      <div class="app-water-display">
+        <span id="water-pct" class="app-water-value">—</span>
+        <span class="app-water-unit">%</span>
+        <span id="water-litres" class="app-water-litres">— L</span>
+      </div>
+      <div class="app-gauge-bar">
+        <div id="water-gauge" class="app-gauge-fill" style="width:0%"></div>
+      </div>
+
+      <div class="app-section-title mt-6">
+        Battery
+        <span class="app-pending-tag">pending Venus OS</span>
+      </div>
+      <div class="app-stat-grid app-pending">
+        <div class="app-stat-label">State of charge</div>
+        <div class="app-stat-value" id="bat-soc">—</div>
+        <div class="app-stat-label">Voltage</div>
+        <div class="app-stat-value" id="bat-voltage">—</div>
+        <div class="app-stat-label">Current</div>
+        <div class="app-stat-value" id="bat-current">—</div>
+        <div class="app-stat-label">Solar</div>
+        <div class="app-stat-value" id="bat-solar">—</div>
+        <div class="app-stat-label">Load</div>
+        <div class="app-stat-value" id="bat-load">—</div>
+      </div>
+
+      <p id="dash-status" class="app-status-line">Loading…</p>
+    </div>
+
+    <!-- ── Calibrate tab ───────────────────────────────────────────────────── -->
+    <div id="tab-calibrate" class="app-tab-panel hidden">
+
+      <div class="app-section-title">Sensor reading</div>
+      <div class="app-cal-reading">
+        <span id="cal-raw-volts" class="app-cal-volts">—</span>
+        <span class="app-cal-volts-unit">V</span>
+      </div>
+      <p class="app-cal-hint">
+        Cal points:
+        <span id="cal-v-empty">—</span> V (empty)
+        &nbsp;·&nbsp;
+        <span id="cal-v-full">—</span> V (full)
+      </p>
+
+      <div class="app-cal-buttons">
+        <button id="btn-mark-empty" class="app-btn app-btn-blue"
+                onclick="app.markEmpty()">Mark as Empty</button>
+        <button id="btn-mark-full"  class="app-btn app-btn-green"
+                onclick="app.markFull()">Mark as Full</button>
+      </div>
+
+      <div class="app-section-title mt-6">Tank capacity</div>
+      <div class="app-cal-capacity">
+        <input id="cal-capacity-input" class="input-field app-cal-capacity-input"
+               type="number" min="10" max="10000" step="10" placeholder="litres" />
+        <button class="app-btn" onclick="app.saveCapacity()">Save</button>
+      </div>
+
+      <p id="cal-status" class="app-status-line"></p>
+    </div>
+
+    <!-- ── System tab ──────────────────────────────────────────────────────── -->
+    <div id="tab-system" class="app-tab-panel hidden">
+
+      <div class="app-stat-grid">
+        <div class="app-stat-label">Uptime</div>
+        <div class="app-stat-value" id="sys-uptime">—</div>
+        <div class="app-stat-label">Firmware</div>
+        <div class="app-stat-value" id="sys-firmware">—</div>
+      </div>
+
+      <p id="sys-status" class="app-status-line">Loading…</p>
+    </div>
 
   </div>
 

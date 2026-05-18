@@ -6,7 +6,9 @@
 
 #include <cstdio>
 
-static logger::Logger log{"TemperatureHandler"};
+static logger::Logger log{app::TemperatureHandler::TAG};
+
+namespace app {
 
 // Sensor lifecycle is owned by EspDeviceInterface::readTemperature().
 // Having two owners caused "Already installed" errors from the ESP-IDF driver.
@@ -16,7 +18,7 @@ TemperatureHandler::TemperatureHandler(device::DeviceInterface& device)
 TemperatureHandler::~TemperatureHandler() = default;
 
 common::Result TemperatureHandler::handle(http::HttpRequest& /*req*/,
-                                           http::HttpResponse& res) {
+                                          http::HttpResponse& res) {
     float celsius = device_.readTemperature();
 
     char body[32];
@@ -25,3 +27,5 @@ common::Result TemperatureHandler::handle(http::HttpRequest& /*req*/,
 
     return res.sendJson(body);
 }
+
+} // namespace app

@@ -12,6 +12,8 @@ ESP32-S3 monitoring application for a campervan, built on the [embedded-framewor
 | Touch | CST816D — capacitive, I²C |
 | IMU | QMI8658 — 6-axis, I²C |
 
+https://www.waveshare.com/wiki/ESP32-S3-Touch-LCD-2
+
 ## Features
 
 ### Implemented

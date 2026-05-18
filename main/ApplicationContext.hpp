@@ -1,6 +1,9 @@
 #pragma once
 
 #include "AppFileTable.hpp"
+#include "AppState.hpp"
+#include "CalibrateHandler.hpp"
+#include "StatusHandler.hpp"
 #include "TemperatureHandler.hpp"
 #include "DisplayContext.hpp"
 #include "framework/FrameworkContext.hpp"
@@ -42,6 +45,12 @@ namespace app {
      // temperatureHandler_ is declared after fw_ so that fw_.getDevice() is
      // valid when the initialiser list runs.
      TemperatureHandler temperatureHandler_;
+
+     // appState_ holds the latest sensor snapshot; declare before the handlers
+     // that reference it so the object is valid when their constructors run.
+     AppState            appState_;
+     StatusHandler       statusHandler_;
+     CalibrateHandler    calibrateHandler_;
 
      // display_ is declared last — it has no dependency on fw_ at construction
      // time but start() must be called after fw_.start() to ensure NVS is ready

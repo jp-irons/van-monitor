@@ -12,6 +12,9 @@ namespace app {
 	    , appFileTable_()
 	    , appFileHandler_("", "index.html", appFileTable_)
 	    , temperatureHandler_(fw.getDevice())
+	    , appState_{}
+	    , statusHandler_(appState_)
+	    , calibrateHandler_(appState_)
 	    , display_() {
 	    log.debug("constructor");
 	}
@@ -36,7 +39,9 @@ namespace app {
 	    fw_.setEntryPoint("/app/ui/");
 
 	    // ── Register app API routes ────────────────────────────────────────────
-	    fw_.addRoute(http::HttpMethod::Get, "/app/api/temperature", &temperatureHandler_);
+	    fw_.addRoute(http::HttpMethod::Get,  "/app/api/temperature", &temperatureHandler_);
+	    fw_.addRoute(http::HttpMethod::Get,  "/app/api/status",      &statusHandler_);
+	    fw_.addRoute(http::HttpMethod::Post, "/app/api/calibrate",   &calibrateHandler_);
 
 	    // ── Configure pull-based OTA ──────────────────────────────────────────
 	    // baseUrl            — GitHub Releases download directory for this repo.

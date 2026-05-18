@@ -1,57 +1,133 @@
 (() => {
     'use strict';
 
-    const TEMP_API   = '/app/api/temperature';
-    const REFRESH_MS = 10_000;
-
-    const tempValue  = document.getElementById('temp-value');
-    const tempStatus = document.getElementById('temp-status');
-    const refreshBtn = document.getElementById('refresh-btn');
+    const STATUS_API    = '/app/api/status';
+    const CALIBRATE_API = '/app/api/calibrate';
+    const REFRESH_MS    = 5_000;
 
     let refreshTimer = null;
 
-    function setLoading() {
-        refreshBtn.disabled = true;
-        tempStatus.textContent = 'Updating…';
-    }
+    // ── Tab switching ─────────────────────────────────────────────────────────
 
-    function setOk(celsius) {
-        tempValue.textContent = celsius.toFixed(1);
-        tempValue.classList.remove('error');
-        tempStatus.textContent = 'Updated ' + new Date().toLocaleTimeString();
-        refreshBtn.disabled = false;
-    }
+    const tabs   = document.querySelectorAll('.app-tab');
+    const panels = document.querySelectorAll('.app-tab-panel');
 
-    function setError(msg) {
-        tempValue.textContent = '—';
-        tempValue.classList.add('error');
-        tempStatus.textContent = msg;
-        refreshBtn.disabled = false;
-    }
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            tabs.forEach(t => t.classList.remove('active'));
+            panels.forEach(p => p.classList.add('hidden'));
+            tab.classList.add('active');
+            document.getElementById('tab-' + tab.dataset.tab).classList.remove('hidden');
+        });
+    });
 
-    async function fetchTemperature() {
-        setLoading();
+    // ── Status polling ────────────────────────────────────────────────────────
+
+    async function fetchStatus() {
         clearTimeout(refreshTimer);
         try {
-            const res = await fetch(TEMP_API);
-            if (!res.ok) {
-                setError(`Error ${res.status}`);
-                return;
-            }
+            const res = await fetch(STATUS_API);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const data = await res.json();
-            if (typeof data.celsius !== 'number') {
-                setError('Unexpected response');
-                return;
-            }
-            setOk(data.celsius);
+            renderDashboard(data);
+            renderCalibrate(data);
+            renderSystem(data);
+            const ts = 'Updated ' + new Date().toLocaleTimeString();
+            setStatusLine('dash-status', ts);
+            setStatusLine('sys-status',  ts);
         } catch (e) {
-            setError('Could not reach device');
+            setStatusLine('dash-status', 'Could not reach device');
+            setStatusLine('sys-status',  'Could not reach device');
         } finally {
-            refreshTimer = setTimeout(fetchTemperature, REFRESH_MS);
+            refreshTimer = setTimeout(fetchStatus, REFRESH_MS);
         }
     }
 
-    // Settings dropdown
+    // ── Dashboard rendering ───────────────────────────────────────────────────
+
+    function renderDashboard(d) {
+        const w = d.water   || {};
+        const b = d.battery || {};
+
+        const pct = typeof w.pct === 'number' ? w.pct : null;
+        setText('water-pct',    pct !== null ? pct.toFixed(0) : '—');
+        setText('water-litres', typeof w.litres === 'number' ? w.litres.toFixed(0) + ' L' : '— L');
+        document.getElementById('water-gauge').style.width =
+            pct !== null ? Math.max(0, Math.min(100, pct)) + '%' : '0%';
+
+        setText('bat-soc',     fmt(b.soc,     1, ' %'));
+        setText('bat-voltage', fmt(b.voltage,  1, ' V'));
+        setText('bat-current', fmt(b.current,  1, ' A'));
+        setText('bat-solar',   fmt(b.solarW,   0, ' W'));
+        setText('bat-load',    fmt(b.loadW,    0, ' W'));
+    }
+
+    // ── Calibrate rendering ───────────────────────────────────────────────────
+
+    function renderCalibrate(d) {
+        const w = d.water || {};
+        setText('cal-raw-volts', typeof w.rawVolts  === 'number' ? w.rawVolts.toFixed(3)  : '—');
+        setText('cal-v-empty',   typeof w.calVEmpty  === 'number' ? w.calVEmpty.toFixed(3) : '—');
+        setText('cal-v-full',    typeof w.calVFull   === 'number' ? w.calVFull.toFixed(3)  : '—');
+
+        // Pre-fill capacity input only when it has no user-entered value
+        const capInput = document.getElementById('cal-capacity-input');
+        if (!capInput.value && typeof w.tankLitres === 'number' && w.tankLitres > 0) {
+            capInput.value = w.tankLitres;
+        }
+    }
+
+    // ── System rendering ──────────────────────────────────────────────────────
+
+    function renderSystem(d) {
+        const s = d.system || {};
+        setText('sys-uptime',   typeof s.uptimeS === 'number' ? formatUptime(s.uptimeS) : '—');
+        setText('sys-firmware', s.firmwareVersion || '—');
+    }
+
+    function formatUptime(s) {
+        const d = Math.floor(s / 86400);
+        const h = Math.floor((s % 86400) / 3600);
+        const m = Math.floor((s % 3600) / 60);
+        if (d > 0) return `${d}d ${h}h ${m}m`;
+        if (h > 0) return `${h}h ${m}m`;
+        return `${m}m`;
+    }
+
+    // ── Calibrate actions ─────────────────────────────────────────────────────
+
+    async function postCalibrate(body) {
+        setStatusLine('cal-status', 'Saving…');
+        setCalButtonsDisabled(true);
+        try {
+            const res = await fetch(CALIBRATE_API, {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body:    JSON.stringify(body),
+            });
+            const data = await res.json();
+            if (!res.ok || data.error) {
+                setStatusLine('cal-status', 'Error: ' + (data.error || res.status));
+            } else {
+                setStatusLine('cal-status', 'Saved ✓');
+                // Refresh immediately so cal points update
+                clearTimeout(refreshTimer);
+                fetchStatus();
+            }
+        } catch (e) {
+            setStatusLine('cal-status', 'Could not reach device');
+        } finally {
+            setCalButtonsDisabled(false);
+        }
+    }
+
+    function setCalButtonsDisabled(disabled) {
+        document.getElementById('btn-mark-empty').disabled = disabled;
+        document.getElementById('btn-mark-full').disabled  = disabled;
+    }
+
+    // ── Settings dropdown ─────────────────────────────────────────────────────
+
     const navBtn      = document.getElementById('nav-settings-btn');
     const navDropdown = document.getElementById('nav-settings-dropdown');
     if (navBtn && navDropdown) {
@@ -67,9 +143,39 @@
         });
     }
 
-    // Expose refresh so the inline onclick can reach it
-    window.app = { refresh: fetchTemperature };
+    // ── Helpers ───────────────────────────────────────────────────────────────
 
-    // Kick off on load
-    fetchTemperature();
+    function setText(id, text) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = text;
+    }
+
+    function setStatusLine(id, text) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = text;
+    }
+
+    /** Format a numeric value with fixed decimals and a unit suffix, or '—'. */
+    function fmt(val, decimals, unit) {
+        return typeof val === 'number' ? val.toFixed(decimals) + unit : '—';
+    }
+
+    // ── Public API (used by inline onclick handlers) ───────────────────────────
+
+    window.app = {
+        markEmpty: () => postCalibrate({ action: 'setEmpty' }),
+        markFull:  () => postCalibrate({ action: 'setFull' }),
+        saveCapacity: () => {
+            const v = parseInt(document.getElementById('cal-capacity-input').value, 10);
+            if (!v || v < 10 || v > 10000) {
+                setStatusLine('cal-status', 'Enter a capacity between 10 and 10 000 L');
+                return;
+            }
+            postCalibrate({ action: 'setCapacity', litres: v });
+        },
+    };
+
+    // ── Boot ──────────────────────────────────────────────────────────────────
+
+    fetchStatus();
 })();

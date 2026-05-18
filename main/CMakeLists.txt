@@ -6,6 +6,8 @@ idf_component_register(
         ApplicationContext.cpp
         LoggingConfig.cpp
         app/TemperatureHandler.cpp
+        app/StatusHandler.cpp
+        app/CalibrateHandler.cpp
         app_files/AppFileTable.cpp
     REQUIRES
         auth
