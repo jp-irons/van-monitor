@@ -2,6 +2,7 @@
 
 #include "http_types/HttpTypes.hpp"
 #include "logger/Logger.hpp"
+#include "esp_wifi.h"
 
 static logger::Logger log{app::ApplicationContext::TAG};
 
@@ -11,11 +12,12 @@ namespace app {
 	    : fw_(fw)
 	    , appFileTable_()
 	    , appFileHandler_("", "index.html", appFileTable_)
-	    , temperatureHandler_(fw.getDevice())
+	    , activityManager_()
+	    , temperatureHandler_(fw.getDevice(), activityManager_)
 	    , waterLevelSensor_()
 	    , appState_{}
-	    , statusHandler_(appState_)
-	    , calibrateHandler_(appState_)
+	    , statusHandler_(appState_, activityManager_)
+	    , calibrateHandler_(appState_, activityManager_)
 	    , display_() {
 	    log.debug("constructor");
 	}
@@ -84,6 +86,24 @@ namespace app {
 
 	    // ── Start the display (NVS must be ready before this) ─────────────────
 	    display_.start();
+
+	    // ── Wire touch → activity ─────────────────────────────────────────────
+	    display_.setActivityCallback([this] { activityManager_.poke(); });
+
+	    // ── Start activity manager ────────────────────────────────────────────
+	    // onActivate:   brighten display, restore minimum modem sleep (fast Wi-Fi).
+	    // onDeactivate: dim display, switch to maximum modem sleep (low power).
+	    activityManager_.start(
+	        60'000,
+	        [this] {
+	            esp_wifi_set_ps(WIFI_PS_MIN_MODEM);
+	            display_.brighten();
+	        },
+	        [this] {
+	            esp_wifi_set_ps(WIFI_PS_MAX_MODEM);
+	            display_.dim();
+	        }
+	    );
 
 	    // ── Initialise water level ADC ────────────────────────────────────────
 	    // Called after fw_.start() so NVS is guaranteed initialised; init()

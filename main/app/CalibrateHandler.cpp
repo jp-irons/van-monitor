@@ -16,13 +16,16 @@ static logger::Logger log{app::CalibrateHandler::TAG};
 
 namespace app {
 
-CalibrateHandler::CalibrateHandler(AppState& state)
-    : state_(state) {}
+CalibrateHandler::CalibrateHandler(AppState& state, ActivityManager& activity)
+    : state_(state)
+    , activity_(activity) {}
 
 CalibrateHandler::~CalibrateHandler() = default;
 
 common::Result CalibrateHandler::handle(http::HttpRequest& req,
                                         http::HttpResponse& res) {
+    activity_.poke();
+
     // ── Read body ─────────────────────────────────────────────────────────────
     // Body is small (<80 bytes); attempt to use the pre-buffered view first,
     // then fall back to a single receiveChunk call.

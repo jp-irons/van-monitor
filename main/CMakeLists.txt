@@ -4,6 +4,7 @@ idf_component_register(
     SRCS
         app_main.cpp
         ApplicationContext.cpp
+        ActivityManager.cpp
         LoggingConfig.cpp
         app/TemperatureHandler.cpp
         app/StatusHandler.cpp
@@ -25,6 +26,7 @@ idf_component_register(
         wifi_manager
         esp_adc
         esp_driver_tsens
+        esp_wifi
     INCLUDE_DIRS
         .
         app

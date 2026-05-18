@@ -16,4 +16,5 @@ idf_component_register(
         logger
     PRIV_REQUIRES
         nvs_flash
+        esp_driver_ledc
 )

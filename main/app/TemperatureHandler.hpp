@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ActivityManager.hpp"
 #include "common/Result.hpp"
 #include "device/DeviceInterface.hpp"
 #include "http/HttpHandler.hpp"
@@ -18,13 +19,14 @@ class TemperatureHandler : public http::HttpHandler {
   public:
     static constexpr const char* TAG = "TemperatureHandler";
 
-    explicit TemperatureHandler(device::DeviceInterface& device);
+    TemperatureHandler(device::DeviceInterface& device, ActivityManager& activity);
     ~TemperatureHandler();
 
     common::Result handle(http::HttpRequest& req, http::HttpResponse& res) override;
 
   private:
     device::DeviceInterface& device_;
+    ActivityManager&         activity_;
 };
 
 } // namespace app

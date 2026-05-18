@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ActivityManager.hpp"
 #include "AppState.hpp"
 #include "common/Result.hpp"
 #include "http/HttpHandler.hpp"
@@ -27,13 +28,14 @@ class StatusHandler : public http::HttpHandler {
 public:
     static constexpr const char* TAG = "StatusHandler";
 
-    explicit StatusHandler(const AppState& state);
+    StatusHandler(const AppState& state, ActivityManager& activity);
     ~StatusHandler();
 
     common::Result handle(http::HttpRequest& req, http::HttpResponse& res) override;
 
 private:
-    const AppState& state_;
+    const AppState&  state_;
+    ActivityManager& activity_;
 
     static constexpr const char* NVS_NS = "water_cal";
 };

@@ -7,6 +7,7 @@
 #include "esp_lcd_panel_ops.h"
 #include "driver/spi_master.h"
 #include "driver/gpio.h"
+#include "driver/ledc.h"   // esp_driver_ledc (PRIV_REQUIRES)
 #include "esp_lvgl_port.h"
 
 static logger::Logger log{display::DisplayContext::TAG};
@@ -24,6 +25,15 @@ static constexpr gpio_num_t TP_SDA   = GPIO_NUM_15;
 static constexpr gpio_num_t TP_SCL   = GPIO_NUM_7;
 static constexpr gpio_num_t TP_INT   = GPIO_NUM_17;
 static constexpr gpio_num_t TP_RST   = GPIO_NUM_16;
+
+// ── Backlight LEDC config ─────────────────────────────────────────────────────
+static constexpr ledc_mode_t      BL_SPEED_MODE = LEDC_LOW_SPEED_MODE;
+static constexpr ledc_timer_t     BL_TIMER      = LEDC_TIMER_0;
+static constexpr ledc_channel_t   BL_CHANNEL    = LEDC_CHANNEL_0;
+static constexpr uint32_t         BL_FREQ_HZ    = 1000;
+static constexpr ledc_timer_bit_t BL_DUTY_RES   = LEDC_TIMER_8_BIT;
+static constexpr uint32_t         BL_DUTY_FULL  = 255;   // 100 %
+static constexpr uint32_t         BL_DUTY_DIM   = 38;    // ~15 %
 
 // ── Display parameters ────────────────────────────────────────────────────────
 static constexpr int    LCD_SPI_HOST    = SPI2_HOST;
@@ -50,6 +60,7 @@ void DisplayContext::start() {
     log.info("start — initialising display stack");
     initSpi();
     initLcd();
+    initBacklight();
     initI2c();
     initTouch();
     initLvgl();
@@ -88,6 +99,22 @@ void DisplayContext::updateSystem(const SystemData& data) {
     lvgl_port_lock(0);
     sysInfo_.update(data);
     lvgl_port_unlock();
+}
+
+void DisplayContext::setActivityCallback(std::function<void()> cb) {
+    onTouchActivity_ = std::move(cb);
+}
+
+void DisplayContext::brighten() {
+    ESP_ERROR_CHECK(ledc_set_duty(BL_SPEED_MODE, BL_CHANNEL, BL_DUTY_FULL));
+    ESP_ERROR_CHECK(ledc_update_duty(BL_SPEED_MODE, BL_CHANNEL));
+    log.debug("backlight full");
+}
+
+void DisplayContext::dim() {
+    ESP_ERROR_CHECK(ledc_set_duty(BL_SPEED_MODE, BL_CHANNEL, BL_DUTY_DIM));
+    ESP_ERROR_CHECK(ledc_update_duty(BL_SPEED_MODE, BL_CHANNEL));
+    log.debug("backlight dim");
 }
 
 void DisplayContext::nextPage() {
@@ -153,17 +180,27 @@ void DisplayContext::initLcd() {
     ESP_ERROR_CHECK(esp_lcd_panel_swap_xy(panelHandle_, false));
     ESP_ERROR_CHECK(esp_lcd_panel_mirror(panelHandle_, false, false));
     ESP_ERROR_CHECK(esp_lcd_panel_disp_on_off(panelHandle_, true));
+}
 
-    // ── Backlight on (active high) ────────────────────────────────────────
-    gpio_config_t bl_cfg = {
-        .pin_bit_mask = (1ULL << LCD_BL),
-        .mode         = GPIO_MODE_OUTPUT,
-        .pull_up_en   = GPIO_PULLUP_DISABLE,
-        .pull_down_en = GPIO_PULLDOWN_DISABLE,
-        .intr_type    = GPIO_INTR_DISABLE,
-    };
-    gpio_config(&bl_cfg);
-    gpio_set_level(LCD_BL, 1);
+void DisplayContext::initBacklight() {
+    log.debug("Backlight init (LEDC PWM, GPIO %d)", (int)LCD_BL);
+
+    ledc_timer_config_t timer_cfg = {};
+    timer_cfg.speed_mode      = BL_SPEED_MODE;
+    timer_cfg.timer_num       = BL_TIMER;
+    timer_cfg.duty_resolution = BL_DUTY_RES;
+    timer_cfg.freq_hz         = BL_FREQ_HZ;
+    timer_cfg.clk_cfg         = LEDC_AUTO_CLK;
+    ESP_ERROR_CHECK(ledc_timer_config(&timer_cfg));
+
+    ledc_channel_config_t ch_cfg = {};
+    ch_cfg.gpio_num   = LCD_BL;
+    ch_cfg.speed_mode = BL_SPEED_MODE;
+    ch_cfg.channel    = BL_CHANNEL;
+    ch_cfg.timer_sel  = BL_TIMER;
+    ch_cfg.duty       = BL_DUTY_FULL;
+    ch_cfg.hpoint     = 0;
+    ESP_ERROR_CHECK(ledc_channel_config(&ch_cfg));
 }
 
 void DisplayContext::initI2c() {
@@ -230,11 +267,18 @@ void DisplayContext::initLvgl() {
 
 // ── Static LVGL input-device callback ────────────────────────────────────────
 
-void DisplayContext::touchReadCb(lv_indev_t* /*indev*/, lv_indev_data_t* data) {
+void DisplayContext::touchReadCb(lv_indev_t* indev, lv_indev_data_t* data) {
     TouchPoint tp = cst816d_read();
     data->point.x = static_cast<int32_t>(tp.x);
     data->point.y = static_cast<int32_t>(tp.y);
     data->state   = tp.pressed ? LV_INDEV_STATE_PRESSED : LV_INDEV_STATE_RELEASED;
+
+    if (tp.pressed) {
+        auto* self = static_cast<DisplayContext*>(lv_indev_get_user_data(indev));
+        if (self && self->onTouchActivity_) {
+            self->onTouchActivity_();
+        }
+    }
 }
 
 } // namespace display

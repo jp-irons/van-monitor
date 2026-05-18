@@ -9,6 +9,7 @@
 #include "lvgl.h"
 
 #include <cstdint>
+#include <functional>
 
 namespace display {
 
@@ -72,6 +73,19 @@ public:
     /** Per-tick work — currently a no-op; LVGL runs its own task via esp_lvgl_port. */
     void loop();
 
+    /**
+     * Register a callback invoked on every touch-press event.
+     * Called from the LVGL task — keep it short and non-blocking.
+     * Typically wired to ActivityManager::poke() by ApplicationContext.
+     */
+    void setActivityCallback(std::function<void()> cb);
+
+    /** Set backlight to full brightness (100 %). */
+    void brighten();
+
+    /** Set backlight to dim level (~15 %). */
+    void dim();
+
     /** Push latest sensor readings to the dashboard screen. */
     void updateWaterLevel(const WaterData& data);
     void updateBattery(const BatteryData& data);
@@ -86,6 +100,7 @@ private:
     // ── Hardware init ─────────────────────────────────────────────────────
     void initSpi();
     void initLcd();
+    void initBacklight();
     void initI2c();
     void initTouch();
     void initLvgl();
@@ -99,6 +114,9 @@ private:
     i2c_master_bus_handle_t   i2cBus_      {nullptr};
     lv_display_t*             lvglDisp_    {nullptr};
     lv_indev_t*               lvglTouch_   {nullptr};
+
+    // ── Touch-activity callback (set by ApplicationContext) ───────────────
+    std::function<void()> onTouchActivity_;
 
     // ── Screens ───────────────────────────────────────────────────────────
     DashboardScreen dashboard_;

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ActivityManager.hpp"
 #include "AppFileTable.hpp"
 #include "AppState.hpp"
 #include "CalibrateHandler.hpp"
@@ -44,6 +45,10 @@ namespace app {
      // initialised first (appFileHandler_ holds a reference to it).
      AppFileTable                          appFileTable_;
      framework_files::EmbeddedFileHandler  appFileHandler_;
+
+     // activityManager_ is declared before all handlers so it is constructed
+     // first and can be passed by reference to each handler's constructor.
+     ActivityManager activityManager_;
 
      // temperatureHandler_ is declared after fw_ so that fw_.getDevice() is
      // valid when the initialiser list runs.
