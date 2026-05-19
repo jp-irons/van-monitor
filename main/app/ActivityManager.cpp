@@ -45,7 +45,7 @@ void ActivityManager::start(uint32_t timeoutMs,
 }
 
 void ActivityManager::poke() {
-	log.debug("poke");
+//	log.debug("poke");
     if (!timer_) return;
 
     // Stop before reading active_ to close the race with the timer callback.

@@ -75,8 +75,12 @@ private:
 
     // IIR low-pass filter state.  Negative sentinel means "not yet seeded":
     // the first valid reading is used directly rather than blending from 0 V.
-    // α = 0.99 at a 50 ms tick gives τ ≈ 5 s.
-    static constexpr float IIR_ALPHA    = 0.99f;
+	// α = 0.0 passes the raw value through.
+	// α = 0.90 at a 50 ms tick gives τ ≈ 0.5 s.
+	// α = 0.95 at a 50 ms tick gives τ ≈ 1 s.
+	// α = 0.99 at a 50 ms tick gives τ ≈ 5 s.
+	// α = 0.995 at a 50 ms tick gives τ ≈ 10 s.
+    static constexpr float IIR_ALPHA    = 0.95f; // was 0.99f
     float                  smoothedVolts_ {-1.0f};
 
     // ── Helpers ───────────────────────────────────────────────────────────
