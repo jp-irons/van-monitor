@@ -3,9 +3,9 @@ file(GLOB_RECURSE APP_EMBED_FILES "app_files/files/*")
 idf_component_register(
     SRCS
         app_main.cpp
-        ApplicationContext.cpp
-        ActivityManager.cpp
         LoggingConfig.cpp
+        app/ApplicationContext.cpp
+        app/ActivityManager.cpp
         app/TemperatureHandler.cpp
         app/StatusHandler.cpp
         app/CalibrateHandler.cpp
@@ -26,7 +26,6 @@ idf_component_register(
         wifi_manager
         esp_adc
         esp_driver_tsens
-        esp_wifi
     INCLUDE_DIRS
         .
         app

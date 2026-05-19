@@ -28,16 +28,24 @@ void ActivityManager::start(uint32_t timeoutMs,
     args.callback = timerCb;
     args.arg      = this;
     args.name     = "activity_mgr";
-    ESP_ERROR_CHECK(esp_timer_create(&args, &timer_));
+    esp_err_t err = esp_timer_create(&args, &timer_);
+    if (err != ESP_OK) {
+        log.error("esp_timer_create failed: %s — activity manager disabled", esp_err_to_name(err));
+        return;
+    }
 
     // Start in active state; arm the initial timeout.
     active_ = true;
-    ESP_ERROR_CHECK(esp_timer_start_once(timer_, timeoutUs_));
+    err = esp_timer_start_once(timer_, timeoutUs_);
+    if (err != ESP_OK) {
+        log.error("esp_timer_start_once failed: %s", esp_err_to_name(err));
+    }
 
     log.info("started — timeout %lu ms", (unsigned long)timeoutMs);
 }
 
 void ActivityManager::poke() {
+	log.debug("poke");
     if (!timer_) return;
 
     // Stop before reading active_ to close the race with the timer callback.
@@ -51,7 +59,10 @@ void ActivityManager::poke() {
         if (onActivate_) onActivate_();
     }
 
-    ESP_ERROR_CHECK(esp_timer_start_once(timer_, timeoutUs_));
+    esp_err_t err = esp_timer_start_once(timer_, timeoutUs_);
+    if (err != ESP_OK) {
+        log.error("esp_timer_start_once failed in poke: %s", esp_err_to_name(err));
+    }
 }
 
 // ── Private ───────────────────────────────────────────────────────────────────

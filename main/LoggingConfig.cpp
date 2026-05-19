@@ -1,5 +1,6 @@
 #include "LoggingConfig.hpp"
 
+#include "ActivityManager.hpp"
 #include "AppFileTable.hpp"
 #include "ApplicationContext.hpp"
 #include "auth/AuthApiHandler.hpp"
@@ -34,7 +35,8 @@ void setupLogging() {
     // ── App-level debug logging (active) ──────────────────────────────────
     LogSinkRegistry::setLevelForTag("app_main", LogLevel::Debug);
     LogSinkRegistry::setLevelForTag(app::ApplicationContext::TAG, LogLevel::Debug);
-    LogSinkRegistry::setLevelForTag(AppFileTable::TAG, LogLevel::Debug);
+	LogSinkRegistry::setLevelForTag(AppFileTable::TAG, LogLevel::Debug);
+	LogSinkRegistry::setLevelForTag(app::ActivityManager::TAG, LogLevel::Debug);
 
     // ── Framework internals — uncomment to debug framework components ──────
     // API handlers

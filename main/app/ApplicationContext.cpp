@@ -2,7 +2,6 @@
 
 #include "http_types/HttpTypes.hpp"
 #include "logger/Logger.hpp"
-#include "esp_wifi.h"
 
 static logger::Logger log{app::ApplicationContext::TAG};
 
@@ -80,6 +79,11 @@ namespace app {
 	    fw_.setHostnameConfig("van-monitor", wifi_manager::SuffixPolicy::None);
 	    fw_.setApSsidConfig("VanMonitor", wifi_manager::SuffixPolicy::None);
 	    fw_.setApPassword("vanmonitor");
+
+	    // ── Wire HTTP requests to activity manager ────────────────────────────
+	    // Fires before every incoming HTTPS request is dispatched, keeping the
+	    // display alive and resetting the inactivity timer on any API or UI call.
+	    fw_.setOnRequestCallback([this] { activityManager_.poke(); });
 		
 	    // ── Start the framework (WiFi, server, OTA, …) ────────────────────────
 	    fw_.start();
@@ -91,20 +95,17 @@ namespace app {
 #endif
 
 	    // ── Start activity manager ────────────────────────────────────────────
-	    // onActivate:   brighten display, restore minimum modem sleep (fast Wi-Fi).
-	    // onDeactivate: dim display, switch to maximum modem sleep (low power).
-	    // WiFi PS switching is unconditional; display calls are guarded so the
-	    // activity manager still works correctly without display hardware.
+	    // onActivate:   brighten display.
+	    // onDeactivate: dim display.
+	    // Display calls are guarded so the activity manager works without display hardware.
 	    activityManager_.start(
 	        60'000,
 	        [this] {
-	            esp_wifi_set_ps(WIFI_PS_MIN_MODEM);
 #if CONFIG_VAN_MONITOR_DISPLAY_ENABLED
 	            display_.brighten();
 #endif
 	        },
 	        [this] {
-	            esp_wifi_set_ps(WIFI_PS_MAX_MODEM);
 #if CONFIG_VAN_MONITOR_DISPLAY_ENABLED
 	            display_.dim();
 #endif
