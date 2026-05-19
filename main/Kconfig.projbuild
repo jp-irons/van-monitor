@@ -1,0 +1,13 @@
+menu "Van Monitor"
+
+config VAN_MONITOR_DISPLAY_ENABLED
+    bool "Enable display (ST7789T3 + CST816D touch)"
+    default y
+    help
+        Enable the physical display and touch controller stack.
+        Set to n to skip all display and touch initialisation — useful when
+        developing without the target hardware connected. The web interface,
+        API routes, water level sensor, and activity management all remain
+        fully functional.
+
+endmenu

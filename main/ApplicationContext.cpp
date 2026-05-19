@@ -85,23 +85,29 @@ namespace app {
 	    fw_.start();
 
 	    // ── Start the display (NVS must be ready before this) ─────────────────
+#if CONFIG_VAN_MONITOR_DISPLAY_ENABLED
 	    display_.start();
-
-	    // ── Wire touch → activity ─────────────────────────────────────────────
 	    display_.setActivityCallback([this] { activityManager_.poke(); });
+#endif
 
 	    // ── Start activity manager ────────────────────────────────────────────
 	    // onActivate:   brighten display, restore minimum modem sleep (fast Wi-Fi).
 	    // onDeactivate: dim display, switch to maximum modem sleep (low power).
+	    // WiFi PS switching is unconditional; display calls are guarded so the
+	    // activity manager still works correctly without display hardware.
 	    activityManager_.start(
 	        60'000,
 	        [this] {
 	            esp_wifi_set_ps(WIFI_PS_MIN_MODEM);
+#if CONFIG_VAN_MONITOR_DISPLAY_ENABLED
 	            display_.brighten();
+#endif
 	        },
 	        [this] {
 	            esp_wifi_set_ps(WIFI_PS_MAX_MODEM);
+#if CONFIG_VAN_MONITOR_DISPLAY_ENABLED
 	            display_.dim();
+#endif
 	        }
 	    );
 
@@ -113,11 +119,15 @@ namespace app {
 
 	void ApplicationContext::loop() {
 	    // Optional per-tick work.  The main loop calls this every 50 ms.
+#if CONFIG_VAN_MONITOR_DISPLAY_ENABLED
 	    display_.loop();
+#endif
 
-	    // Poll ADC, update shared state, push to display
+	    // Poll ADC, update shared state, push to display (when present)
 	    waterLevelSensor_.poll(appState_.water, loopTick_);
+#if CONFIG_VAN_MONITOR_DISPLAY_ENABLED
 	    display_.updateWaterLevel(appState_.water);
+#endif
 
 	    // TODO: receive Venus OS MQTT data, push to display_.updateBattery() / updateSystem()
 

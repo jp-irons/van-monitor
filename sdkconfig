@@ -969,6 +969,12 @@ CONFIG_PARTITION_TABLE_MD5=y
 # end of Partition Table
 
 #
+# Van Monitor
+#
+# CONFIG_VAN_MONITOR_DISPLAY_ENABLED is not set
+# end of Van Monitor
+
+#
 # Compiler options
 #
 # default:
