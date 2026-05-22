@@ -8,6 +8,7 @@
 #include "driver/i2c_master.h"
 #include "lvgl.h"
 
+#include <atomic>
 #include <cstdint>
 #include <functional>
 
@@ -88,10 +89,16 @@ public:
 
     /**
      * If not already on the dashboard, switch to it.
-     * Called by ActivityManager on inactivity timeout so the device
-     * always returns to the main view after the user walks away.
+     * Must be called from the main-loop task (holds LVGL lock internally).
      */
     void returnToDashboard();
+
+    /**
+     * Schedule a return to dashboard from any task (e.g. esp_timer callback).
+     * Sets an atomic flag; the actual LVGL call happens in loop() on the
+     * main-loop task where it is safe.
+     */
+    void scheduleReturnToDashboard();
 
     /** Push latest sensor readings to the dashboard screen. */
     void updateWaterLevel(const WaterData& data);
@@ -124,6 +131,9 @@ private:
 
     // ── Touch-activity callback (set by ApplicationContext) ───────────────
     std::function<void()> onTouchActivity_;
+
+    // ── Pending return-to-dashboard flag (set from timer task, consumed in loop()) ──
+    std::atomic<bool> returnPending_ {false};
 
     // ── Screens ───────────────────────────────────────────────────────────
     DashboardScreen dashboard_;

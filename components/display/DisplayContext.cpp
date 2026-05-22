@@ -80,8 +80,12 @@ void DisplayContext::start() {
 }
 
 void DisplayContext::loop() {
-    // LVGL runs in its own FreeRTOS task via esp_lvgl_port — nothing to do here.
-    // This method is kept so ApplicationContext can call it symmetrically.
+    // Check for a pending return-to-dashboard request.  The flag is set by
+    // scheduleReturnToDashboard() which may be called from the esp_timer task;
+    // the actual LVGL call is deferred here where we are on the main-loop task.
+    if (returnPending_.exchange(false)) {
+        returnToDashboard();
+    }
 }
 
 void DisplayContext::updateWaterLevel(const WaterData& data) {
@@ -117,6 +121,10 @@ void DisplayContext::dim() {
     ESP_ERROR_CHECK(ledc_set_duty(BL_SPEED_MODE, BL_CHANNEL, BL_DUTY_DIM));
     ESP_ERROR_CHECK(ledc_update_duty(BL_SPEED_MODE, BL_CHANNEL));
     log.debug("backlight dim");
+}
+
+void DisplayContext::scheduleReturnToDashboard() {
+    returnPending_.store(true);
 }
 
 void DisplayContext::returnToDashboard() {

@@ -47,8 +47,6 @@ namespace app {
      AppFileTable                          appFileTable_;
      framework_files::EmbeddedFileHandler  appFileHandler_;
 
-     // activityManager_ is declared before all handlers so it is constructed
-     // first and can be passed by reference to each handler's constructor.
      ActivityManager activityManager_;
 
      // temperatureHandler_ is declared after fw_ so that fw_.getDevice() is

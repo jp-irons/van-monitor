@@ -16,11 +16,11 @@ namespace app {
 	    , appFileTable_()
 	    , appFileHandler_("", "index.html", appFileTable_)
 	    , activityManager_()
-	    , temperatureHandler_(fw.getDevice(), activityManager_)
+	    , temperatureHandler_(fw.getDevice())
 	    , waterLevelSensor_()
 	    , appState_{}
-	    , statusHandler_(appState_, activityManager_)
-	    , calibrateHandler_(appState_, activityManager_)
+	    , statusHandler_(appState_)
+	    , calibrateHandler_(appState_)
 	    , display_() {
 	    log.debug("constructor");
 	}
@@ -84,11 +84,6 @@ namespace app {
 	    fw_.setApSsidConfig("VanMonitor", wifi_manager::SuffixPolicy::None);
 	    fw_.setApPassword("vanmonitor");
 
-	    // ── Wire HTTP requests to activity manager ────────────────────────────
-	    // Fires before every incoming HTTPS request is dispatched, keeping the
-	    // display alive and resetting the inactivity timer on any API or UI call.
-	    fw_.setOnRequestCallback([this] { activityManager_.poke(); });
-		
 	    // ── Start the framework (WiFi, server, OTA, …) ────────────────────────
 	    fw_.start();
 
@@ -116,7 +111,7 @@ namespace app {
 	        [this] {
 #if CONFIG_VAN_MONITOR_DISPLAY_ENABLED
 	            display_.dim();
-	            display_.returnToDashboard();
+	            display_.scheduleReturnToDashboard();
 #endif
 	        }
 	    );

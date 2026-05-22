@@ -1,6 +1,5 @@
 #pragma once
 
-#include "ActivityManager.hpp"
 #include "AppState.hpp"
 #include "common/Result.hpp"
 #include "http/HttpHandler.hpp"
@@ -31,14 +30,13 @@ class CalibrateHandler : public http::HttpHandler {
 public:
     static constexpr const char* TAG = "CalibrateHandler";
 
-    CalibrateHandler(AppState& state, ActivityManager& activity);
+    explicit CalibrateHandler(AppState& state);
     ~CalibrateHandler();
 
     common::Result handle(http::HttpRequest& req, http::HttpResponse& res) override;
 
 private:
-    AppState&        state_;
-    ActivityManager& activity_;
+    AppState& state_;
 
     static constexpr const char* NVS_NS = "water_cal";
 

@@ -16,16 +16,13 @@ static logger::Logger log{app::StatusHandler::TAG};
 
 namespace app {
 
-StatusHandler::StatusHandler(const AppState& state, ActivityManager& activity)
-    : state_(state)
-    , activity_(activity) {}
+StatusHandler::StatusHandler(const AppState& state)
+    : state_(state) {}
 
 StatusHandler::~StatusHandler() = default;
 
 common::Result StatusHandler::handle(http::HttpRequest& /*req*/,
                                      http::HttpResponse& res) {
-    activity_.poke();
-
     // ── Read calibration config from NVS ──────────────────────────────────────
     float    calVEmpty  = 0.60f;
     float    calVFull   = 3.00f;

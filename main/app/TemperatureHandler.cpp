@@ -12,16 +12,13 @@ namespace app {
 
 // Sensor lifecycle is owned by EspDeviceInterface::readTemperature().
 // Having two owners caused "Already installed" errors from the ESP-IDF driver.
-TemperatureHandler::TemperatureHandler(device::DeviceInterface& device,
-                                       ActivityManager& activity)
-    : device_(device)
-    , activity_(activity) {}
+TemperatureHandler::TemperatureHandler(device::DeviceInterface& device)
+    : device_(device) {}
 
 TemperatureHandler::~TemperatureHandler() = default;
 
 common::Result TemperatureHandler::handle(http::HttpRequest& /*req*/,
                                           http::HttpResponse& res) {
-    activity_.poke();
     float celsius = device_.readTemperature();
 
     char body[32];
