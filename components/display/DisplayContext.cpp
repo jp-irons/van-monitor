@@ -9,6 +9,8 @@
 #include "driver/gpio.h"
 #include "driver/ledc.h"   // esp_driver_ledc (PRIV_REQUIRES)
 #include "esp_lvgl_port.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 static logger::Logger log{display::DisplayContext::TAG};
 
@@ -205,6 +207,18 @@ void DisplayContext::initBacklight() {
 
 void DisplayContext::initI2c() {
     log.debug("I2C init (touch)");
+
+    // ── Diagnostic: check bus lines are high before handing to I2C driver ─
+    // A stuck-low line (0) means the bus is held down by something and no
+    // I2C transaction can complete.
+    gpio_set_direction(TP_SDA, GPIO_MODE_INPUT);
+    gpio_set_pull_mode(TP_SDA, GPIO_PULLUP_ONLY);
+    gpio_set_direction(TP_SCL, GPIO_MODE_INPUT);
+    gpio_set_pull_mode(TP_SCL, GPIO_PULLUP_ONLY);
+    vTaskDelay(pdMS_TO_TICKS(5));
+    log.info("I2C lines before init: SDA(GPIO%d)=%d  SCL(GPIO%d)=%d",
+             static_cast<int>(TP_SDA), gpio_get_level(TP_SDA),
+             static_cast<int>(TP_SCL), gpio_get_level(TP_SCL));
 
     i2c_master_bus_config_t bus_cfg = {};
     bus_cfg.i2c_port            = I2C_NUM_0;
