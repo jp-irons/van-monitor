@@ -12,6 +12,7 @@
 #include "framework_files/EmbeddedFileHandler.hpp"
 
 #include <cstdint>
+#include <string>
 
 namespace app {
 
@@ -72,5 +73,15 @@ namespace app {
      // time but start() must be called after fw_.start() to ensure NVS is ready
      // (CalibrateScreen reads calibration values from NVS on first load).
      display::DisplayContext display_;
+
+     // ── Cached system-screen fields ───────────────────────────────────────
+     // Updated once per second in loop(); strings outlive each updateSystem() call.
+     std::string sysSSID_  {"---"};
+     int         sysRssi_  {0};
+     std::string sysIP_    {"---"};
+     std::string sysHost_  {"van-monitor"};
+     std::string sysFwVer_ {"---"};
+
+     void pushSystemData_();
  };
 } // namespace app

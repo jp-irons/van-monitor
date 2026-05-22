@@ -26,6 +26,9 @@ idf_component_register(
         wifi_manager
         esp_adc
         esp_driver_tsens
+        esp_wifi
+        esp_netif
+        app_update
     INCLUDE_DIRS
         .
         app

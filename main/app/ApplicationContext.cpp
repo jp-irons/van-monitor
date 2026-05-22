@@ -2,6 +2,10 @@
 
 #include "http_types/HttpTypes.hpp"
 #include "logger/Logger.hpp"
+#include "esp_app_desc.h"
+#include "esp_netif.h"
+#include "esp_timer.h"
+#include "esp_wifi.h"
 
 static logger::Logger log{app::ApplicationContext::TAG};
 
@@ -88,6 +92,10 @@ namespace app {
 	    // ── Start the framework (WiFi, server, OTA, …) ────────────────────────
 	    fw_.start();
 
+	    // ── Cache firmware version for system screen ──────────────────────────
+	    const esp_app_desc_t* desc = esp_app_get_description();
+	    sysFwVer_ = (desc && desc->version[0]) ? desc->version : "---";
+
 	    // ── Start the display (NVS must be ready before this) ─────────────────
 #if CONFIG_VAN_MONITOR_DISPLAY_ENABLED
 	    display_.start();
@@ -96,7 +104,7 @@ namespace app {
 
 	    // ── Start activity manager ────────────────────────────────────────────
 	    // onActivate:   brighten display.
-	    // onDeactivate: dim display.
+	    // onDeactivate: dim display + return to dashboard if on another page.
 	    // Display calls are guarded so the activity manager works without display hardware.
 	    activityManager_.start(
 	        60'000,
@@ -108,6 +116,7 @@ namespace app {
 	        [this] {
 #if CONFIG_VAN_MONITOR_DISPLAY_ENABLED
 	            display_.dim();
+	            display_.returnToDashboard();
 #endif
 	        }
 	    );
@@ -130,8 +139,57 @@ namespace app {
 	    display_.updateWaterLevel(appState_.water);
 #endif
 
-	    // TODO: receive Venus OS MQTT data, push to display_.updateBattery() / updateSystem()
+	    // Push system info to display once per second (every 20 ticks × 50 ms)
+#if CONFIG_VAN_MONITOR_DISPLAY_ENABLED
+	    if (loopTick_ % 20 == 0) {
+	        pushSystemData_();
+	    }
+#endif
 
 	    loopTick_++;
 	}
+
+	void ApplicationContext::pushSystemData_()
+	{
+	    // ── Wi-Fi STA info ────────────────────────────────────────────────────
+	    wifi_ap_record_t ap = {};
+	    if (esp_wifi_sta_get_ap_info(&ap) == ESP_OK) {
+	        sysSSID_ = reinterpret_cast<const char*>(ap.ssid);
+	        sysRssi_ = ap.rssi;
+	    } else {
+	        sysSSID_ = "---";
+	        sysRssi_ = 0;
+	    }
+
+	    // ── IP address ────────────────────────────────────────────────────────
+	    esp_netif_t* sta = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
+	    if (sta) {
+	        esp_netif_ip_info_t ipInfo = {};
+	        if (esp_netif_get_ip_info(sta, &ipInfo) == ESP_OK && ipInfo.ip.addr != 0) {
+	            char buf[16];
+	            esp_ip4addr_ntoa(&ipInfo.ip, buf, sizeof(buf));
+	            sysIP_ = buf;
+	        } else {
+	            sysIP_ = "---";
+	        }
+	    } else {
+	        sysIP_ = "---";
+	    }
+
+	    // ── Build and push ────────────────────────────────────────────────────
+	    uint32_t uptimeS = static_cast<uint32_t>(esp_timer_get_time() / 1'000'000ULL);
+
+	    display::SystemData sd = {};
+	    sd.ssid            = sysSSID_.c_str();
+	    sd.rssi            = sysRssi_;
+	    sd.ipAddr          = sysIP_.c_str();
+	    sd.hostname        = sysHost_.c_str();
+	    sd.mqttOk          = false;
+	    sd.venusPortalId   = "---";
+	    sd.venusOk         = false;
+	    sd.uptimeS         = uptimeS;
+	    sd.firmwareVersion = sysFwVer_.c_str();
+	    display_.updateSystem(sd);
+	}
+
 } // namespace app

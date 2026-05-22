@@ -86,6 +86,13 @@ public:
     /** Set backlight to dim level (~15 %). */
     void dim();
 
+    /**
+     * If not already on the dashboard, switch to it.
+     * Called by ActivityManager on inactivity timeout so the device
+     * always returns to the main view after the user walks away.
+     */
+    void returnToDashboard();
+
     /** Push latest sensor readings to the dashboard screen. */
     void updateWaterLevel(const WaterData& data);
     void updateBattery(const BatteryData& data);

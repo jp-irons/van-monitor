@@ -90,7 +90,6 @@ TouchPoint cst816d_read()
     if (!s_dev || !s_touch_pending) {
         return {0, 0, false};
     }
-    ESP_LOGI(TAG, "INT fired — reading touch data");
     s_touch_pending = false;
 
     // ── I2C read — 7 bytes from register 0x00 ────────────────────────────
@@ -120,7 +119,6 @@ TouchPoint cst816d_read()
     uint16_t x = buf[4];
     uint16_t y = (static_cast<uint16_t>(buf[5]) << 8) | buf[6];
 
-    ESP_LOGI(TAG, "Touch: x=%d y=%d", x, y);
     return {x, y, true};
 }
 

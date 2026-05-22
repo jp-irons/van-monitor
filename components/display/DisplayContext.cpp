@@ -119,6 +119,15 @@ void DisplayContext::dim() {
     log.debug("backlight dim");
 }
 
+void DisplayContext::returnToDashboard() {
+    if (currentPage_ == 0) return;
+    currentPage_ = 0;
+    lvgl_port_lock(0);
+    dashboard_.show();
+    lvgl_port_unlock();
+    log.debug("returned to dashboard on inactivity");
+}
+
 void DisplayContext::nextPage() {
     currentPage_ = (currentPage_ + 1) % PAGE_COUNT;
     lvgl_port_lock(0);
@@ -207,18 +216,6 @@ void DisplayContext::initBacklight() {
 
 void DisplayContext::initI2c() {
     log.debug("I2C init (touch)");
-
-    // ── Diagnostic: check bus lines are high before handing to I2C driver ─
-    // A stuck-low line (0) means the bus is held down by something and no
-    // I2C transaction can complete.
-    gpio_set_direction(TP_SDA, GPIO_MODE_INPUT);
-    gpio_set_pull_mode(TP_SDA, GPIO_PULLUP_ONLY);
-    gpio_set_direction(TP_SCL, GPIO_MODE_INPUT);
-    gpio_set_pull_mode(TP_SCL, GPIO_PULLUP_ONLY);
-    vTaskDelay(pdMS_TO_TICKS(5));
-    log.info("I2C lines before init: SDA(GPIO%d)=%d  SCL(GPIO%d)=%d",
-             static_cast<int>(TP_SDA), gpio_get_level(TP_SDA),
-             static_cast<int>(TP_SCL), gpio_get_level(TP_SCL));
 
     i2c_master_bus_config_t bus_cfg = {};
     bus_cfg.i2c_port            = I2C_NUM_0;
