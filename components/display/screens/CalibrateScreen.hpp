@@ -8,14 +8,14 @@ class DisplayContext;
 struct WaterData;
 
 /**
- * CalibrateScreen — page 3: tank calibration controls.
+ * CalibrateScreen — page 2: tank calibration controls.
  *
  * Layout (240 × 320):
- *   [0  – 27]  Header bar: "CALIBRATE"
- *   [28 – 69]  Tank capacity row with − / + buttons
- *   [73 – 136] Mark Empty button (blue)
- *   [140– 203] Mark Full button (green)
- *   [207– 283] Raw ADC / computed level / calibration points readout panel
+ *   [0  – 27]  Header bar: "CALIBRATE" (Montserrat 10, left-aligned)
+ *   [34 – 69]  Tank capacity row: "Tank capacity" label + − value + button
+ *   [78 – 137] Mark Empty button (blue): title + "press when tank is empty" subtitle
+ *   [146– 205] Mark Full button (green): title + "press when tank is full" subtitle
+ *   [214– 285] Raw readout panel — 3 rows (Raw level / Computed level / Cal points)
  *   [284– 319] Nav button
  *
  * Calibration points (empty voltage, full voltage) are persisted to NVS by
@@ -62,7 +62,12 @@ private:
     // Calibration state — updated when Mark buttons are pressed
     float calVEmpty_ {0.60f};
     float calVFull_  {3.00f};
-    float lastVolts_ {0.0f};  // most recent reading from updateRaw()
+    float lastVolts_ {0.0f};   // most recent reading from updateRaw()
+
+    // Display-side IIR for Raw level label — slower than sensor IIR so the
+    // label stays readable.  Seeded on first call (negative sentinel = unseeded).
+    float dispVolts_ {-1.0f};
+    static constexpr float DISP_ALPHA = 0.95f;
 };
 
 } // namespace display

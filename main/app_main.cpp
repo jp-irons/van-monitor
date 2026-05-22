@@ -10,6 +10,8 @@ extern "C" {
 
 using namespace logger;
 
+// TODO check Wi-Fi power modes and consumption
+
 static Logger log{"app_main"};
 
 extern "C" void app_main(void) {

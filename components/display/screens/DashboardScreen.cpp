@@ -122,7 +122,7 @@ void DashboardScreen::create(DisplayContext* ctx) {
 
     // Litres label — below percentage
     arcLitres_ = lv_label_create(screen_);
-    lv_label_set_text(arcLitres_, "-- L");
+    lv_label_set_text(arcLitres_, "--L");
     lv_obj_set_style_text_color(arcLitres_, CYAN(), LV_PART_MAIN);
     lv_obj_set_style_text_font(arcLitres_, &lv_font_montserrat_14, LV_PART_MAIN);
     lv_obj_align(arcLitres_, LV_ALIGN_TOP_MID, 0, ARC_Y_CENTER + 8);
@@ -204,7 +204,7 @@ void DashboardScreen::updateWater(const WaterData& data) {
     snprintf(buf, sizeof(buf), "%.0f%%", data.pct);
     lv_label_set_text(arcPct_, buf);
 
-    snprintf(buf, sizeof(buf), "%.0f L", data.litres);
+    snprintf(buf, sizeof(buf), "%.0fL", data.litres);
     lv_label_set_text(arcLitres_, buf);
 
     applyWaterAlarm(data.pct);

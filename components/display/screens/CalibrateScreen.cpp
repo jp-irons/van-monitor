@@ -218,7 +218,7 @@ void CalibrateScreen::create(DisplayContext* ctx) {
         lv_obj_align_to(*valOut, keyLbl, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
     };
 
-    makeRawRow(rawPanel,  0, "Raw ADC",        &rawAdc_);
+    makeRawRow(rawPanel,  0, "Raw level",       &rawAdc_);
     makeRawRow(rawPanel, 16, "Computed level", &computedM_);
     makeRawRow(rawPanel, 32, "Cal points",     &calPoints_);
     // rawVolts_ is unused as a separate label — folded into rawAdc_
@@ -257,15 +257,22 @@ void CalibrateScreen::show() {
 void CalibrateScreen::updateRaw(const WaterData& data) {
     lastVolts_ = data.rawVolts;
 
+    // Display-side IIR: seed on first call, blend thereafter
+    if (dispVolts_ < 0.0f) {
+        dispVolts_ = data.rawVolts;
+    } else {
+        dispVolts_ = DISP_ALPHA * dispVolts_ + (1.0f - DISP_ALPHA) * data.rawVolts;
+    }
+
     char buf[48];
 
-    snprintf(buf, sizeof(buf), "%u  (%.2f V)", data.rawAdc, data.rawVolts);
+    snprintf(buf, sizeof(buf), "%.2fV", dispVolts_);
     lv_label_set_text(rawAdc_, buf);
 
-    snprintf(buf, sizeof(buf), "%.2f m  \xe2\x86\x92  %.0f L", data.computedM, data.litres);
+    snprintf(buf, sizeof(buf), "%.0fL", data.litres);
     lv_label_set_text(computedM_, buf);
 
-    snprintf(buf, sizeof(buf), "%.2f V  \xc2\xb7  %.2f V", calVEmpty_, calVFull_);
+    snprintf(buf, sizeof(buf), "%.2fV / %.2fV", calVEmpty_, calVFull_);
     lv_label_set_text(calPoints_, buf);
 }
 
@@ -278,7 +285,7 @@ void CalibrateScreen::onMarkEmpty(lv_event_t* e) {
     self->saveCalibration();
     // Refresh cal points display
     char buf[32];
-    snprintf(buf, sizeof(buf), "%.2f V  \xc2\xb7  %.2f V", self->calVEmpty_, self->calVFull_);
+    snprintf(buf, sizeof(buf), "%.2fV / %.2fV", self->calVEmpty_, self->calVFull_);
     lv_label_set_text(self->calPoints_, buf);
 }
 
@@ -288,7 +295,7 @@ void CalibrateScreen::onMarkFull(lv_event_t* e) {
     ESP_LOGI(TAG, "Calibration: full = %.3f V", self->calVFull_);
     self->saveCalibration();
     char buf[32];
-    snprintf(buf, sizeof(buf), "%.2f V  \xc2\xb7  %.2f V", self->calVEmpty_, self->calVFull_);
+    snprintf(buf, sizeof(buf), "%.2fV / %.2fV", self->calVEmpty_, self->calVFull_);
     lv_label_set_text(self->calPoints_, buf);
 }
 

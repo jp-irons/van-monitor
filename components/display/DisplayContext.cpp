@@ -140,9 +140,9 @@ void DisplayContext::nextPage() {
     currentPage_ = (currentPage_ + 1) % PAGE_COUNT;
     lvgl_port_lock(0);
     switch (currentPage_) {
-        case 0: dashboard_.show(); break;
-        case 1: sysInfo_.show();   break;
-        case 2: calibrate_.show(); break;
+        case 0: dashboard_.show();  break;
+        case 1: calibrate_.show(); break;
+        case 2: sysInfo_.show();   break;
     }
     lvgl_port_unlock();
     log.debug("page -> %d", currentPage_);
