@@ -212,7 +212,7 @@ void CalibrateScreen::create(DisplayContext* ctx) {
         lv_obj_set_width(keyLbl, 90);
 
         *valOut = lv_label_create(parent);
-        lv_label_set_text(*valOut, "—");
+        lv_label_set_text(*valOut, "-");
         lv_obj_set_style_text_color(*valOut, TEXT_SEC(), LV_PART_MAIN);
         lv_obj_set_style_text_font(*valOut, &lv_font_montserrat_10, LV_PART_MAIN);
         lv_obj_align_to(*valOut, keyLbl, LV_ALIGN_OUT_RIGHT_MID, 0, 0);

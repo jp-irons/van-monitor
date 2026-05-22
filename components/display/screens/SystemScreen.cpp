@@ -52,7 +52,7 @@ void SystemScreen::create(DisplayContext* ctx) {
     // Wi-Fi
     lv_obj_t* rowWifi = makeRow(screen_, y, "Wi-Fi", CYAN());
     valWifi_   = lv_label_create(rowWifi);
-    lv_label_set_text(valWifi_, "—");
+    lv_label_set_text(valWifi_, "-");
     lv_obj_set_style_text_color(valWifi_, TEXT_PRI(), LV_PART_MAIN);
     lv_obj_set_style_text_font(valWifi_, &lv_font_montserrat_12, LV_PART_MAIN);
     lv_obj_align(valWifi_, LV_ALIGN_LEFT_MID, 62, 0);
@@ -64,7 +64,7 @@ void SystemScreen::create(DisplayContext* ctx) {
     // IP
     lv_obj_t* rowIp = makeRow(screen_, y, "IP", lv_color_hex(0x818cf8));
     valIp_ = lv_label_create(rowIp);
-    lv_label_set_text(valIp_, "—");
+    lv_label_set_text(valIp_, "-");
     lv_obj_set_style_text_color(valIp_, TEXT_PRI(), LV_PART_MAIN);
     lv_obj_set_style_text_font(valIp_, &lv_font_montserrat_12, LV_PART_MAIN);
     lv_obj_align(valIp_, LV_ALIGN_LEFT_MID, 62, 0);
@@ -73,7 +73,7 @@ void SystemScreen::create(DisplayContext* ctx) {
     // Hostname
     lv_obj_t* rowHost = makeRow(screen_, y, "Hostname", TEXT_SEC());
     valHost_ = lv_label_create(rowHost);
-    lv_label_set_text(valHost_, "—");
+    lv_label_set_text(valHost_, "-");
     lv_obj_set_style_text_color(valHost_, TEXT_PRI(), LV_PART_MAIN);
     lv_obj_set_style_text_font(valHost_, &lv_font_montserrat_12, LV_PART_MAIN);
     lv_obj_align(valHost_, LV_ALIGN_LEFT_MID, 62, 0);
@@ -84,7 +84,7 @@ void SystemScreen::create(DisplayContext* ctx) {
     // MQTT
     lv_obj_t* rowMqtt = makeRow(screen_, y, "MQTT", lv_color_hex(0xfbbf24));
     valMqtt_ = lv_label_create(rowMqtt);
-    lv_label_set_text(valMqtt_, "—");
+    lv_label_set_text(valMqtt_, "-");
     lv_obj_set_style_text_color(valMqtt_, TEXT_PRI(), LV_PART_MAIN);
     lv_obj_set_style_text_font(valMqtt_, &lv_font_montserrat_12, LV_PART_MAIN);
     lv_obj_align(valMqtt_, LV_ALIGN_LEFT_MID, 62, 0);
@@ -96,7 +96,7 @@ void SystemScreen::create(DisplayContext* ctx) {
     // Venus OS
     lv_obj_t* rowVenus = makeRow(screen_, y, "Venus OS", TEXT_MUT());
     valVenus_ = lv_label_create(rowVenus);
-    lv_label_set_text(valVenus_, "—");
+    lv_label_set_text(valVenus_, "-");
     lv_obj_set_style_text_color(valVenus_, TEXT_PRI(), LV_PART_MAIN);
     lv_obj_set_style_text_font(valVenus_, &lv_font_montserrat_12, LV_PART_MAIN);
     lv_obj_align(valVenus_, LV_ALIGN_LEFT_MID, 62, 0);
@@ -108,7 +108,7 @@ void SystemScreen::create(DisplayContext* ctx) {
     // Uptime
     lv_obj_t* rowUptime = makeRow(screen_, y, "Uptime", TEXT_MUT());
     valUptime_ = lv_label_create(rowUptime);
-    lv_label_set_text(valUptime_, "—");
+    lv_label_set_text(valUptime_, "-");
     lv_obj_set_style_text_color(valUptime_, TEXT_PRI(), LV_PART_MAIN);
     lv_obj_set_style_text_font(valUptime_, &lv_font_montserrat_12, LV_PART_MAIN);
     lv_obj_align(valUptime_, LV_ALIGN_LEFT_MID, 62, 0);
@@ -117,7 +117,7 @@ void SystemScreen::create(DisplayContext* ctx) {
     // Firmware
     lv_obj_t* rowFw = makeRow(screen_, y, "Firmware", TEXT_MUT());
     valFw_ = lv_label_create(rowFw);
-    lv_label_set_text(valFw_, "—");
+    lv_label_set_text(valFw_, "-");
     lv_obj_set_style_text_color(valFw_, TEXT_PRI(), LV_PART_MAIN);
     lv_obj_set_style_text_font(valFw_, &lv_font_montserrat_12, LV_PART_MAIN);
     lv_obj_align(valFw_, LV_ALIGN_LEFT_MID, 62, 0);

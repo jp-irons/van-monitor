@@ -81,14 +81,17 @@ void DashboardScreen::create(DisplayContext* ctx) {
 
     // ── Water arc gauge ───────────────────────────────────────────────────
     // The arc is centred in the water section (y 28–189, height 162)
-    static constexpr int ARC_Y_CENTER = HEADER_H + 81;  // 28 + 81 = 109
-    static constexpr int ARC_RADIUS   = 54;
+    // Water section spans y=48 (below banner) to y=190 (divider) = 142 px.
+    // Arc widget at radius 48 is 120 px tall → 11 px margin top & bottom → centre y=119.
+    static constexpr int ARC_RADIUS   = 48;
     static constexpr int ARC_WIDTH    = 10;
+    static constexpr int ARC_SIZE     = ARC_RADIUS * 2 + ARC_WIDTH * 2 + 4;  // 120
+    static constexpr int ARC_Y_TOP    = HEADER_H + BANNER_H + 11;            // 59
+    static constexpr int ARC_Y_CENTER = ARC_Y_TOP + ARC_SIZE / 2;            // 119
 
     arc_ = lv_arc_create(screen_);
-    lv_obj_set_size(arc_, ARC_RADIUS * 2 + ARC_WIDTH * 2 + 4,
-                           ARC_RADIUS * 2 + ARC_WIDTH * 2 + 4);
-    lv_obj_align(arc_, LV_ALIGN_TOP_MID, 0, HEADER_H + 5);
+    lv_obj_set_size(arc_, ARC_SIZE, ARC_SIZE);
+    lv_obj_align(arc_, LV_ALIGN_TOP_MID, 0, ARC_Y_TOP);
 
     // Arc spans 135° → 405° (270° sweep, gap at bottom)
     lv_arc_set_bg_angles(arc_, 135, 45);
@@ -112,14 +115,14 @@ void DashboardScreen::create(DisplayContext* ctx) {
 
     // Percentage label — large, centred over arc
     arcPct_ = lv_label_create(screen_);
-    lv_label_set_text(arcPct_, "—%");
+    lv_label_set_text(arcPct_, "--%");
     lv_obj_set_style_text_color(arcPct_, TEXT_PRI(), LV_PART_MAIN);
     lv_obj_set_style_text_font(arcPct_, &lv_font_montserrat_28, LV_PART_MAIN);
     lv_obj_align(arcPct_, LV_ALIGN_TOP_MID, 0, ARC_Y_CENTER - 22);
 
     // Litres label — below percentage
     arcLitres_ = lv_label_create(screen_);
-    lv_label_set_text(arcLitres_, "— L");
+    lv_label_set_text(arcLitres_, "-- L");
     lv_obj_set_style_text_color(arcLitres_, CYAN(), LV_PART_MAIN);
     lv_obj_set_style_text_font(arcLitres_, &lv_font_montserrat_14, LV_PART_MAIN);
     lv_obj_align(arcLitres_, LV_ALIGN_TOP_MID, 0, ARC_Y_CENTER + 8);
@@ -146,14 +149,14 @@ void DashboardScreen::create(DisplayContext* ctx) {
 
     // SOC percentage — large text
     battSoc_ = lv_label_create(screen_);
-    lv_label_set_text(battSoc_, "—%");
+    lv_label_set_text(battSoc_, "--%");
     lv_obj_set_style_text_color(battSoc_, TEXT_PRI(), LV_PART_MAIN);
     lv_obj_set_style_text_font(battSoc_, &lv_font_montserrat_22, LV_PART_MAIN);
     lv_obj_set_pos(battSoc_, 36, BATT_Y);
 
     // Voltage / current — right-aligned on same row
     battVolts_ = lv_label_create(screen_);
-    lv_label_set_text(battVolts_, "—.— V");
+    lv_label_set_text(battVolts_, "--.- V");
     lv_obj_set_style_text_color(battVolts_, TEXT_MUT(), LV_PART_MAIN);
     lv_obj_set_style_text_font(battVolts_, &lv_font_montserrat_12, LV_PART_MAIN);
     lv_obj_align(battVolts_, LV_ALIGN_TOP_RIGHT, -12, BATT_Y + 5);

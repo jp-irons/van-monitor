@@ -12,19 +12,19 @@
 
 static logger::Logger log{display::DisplayContext::TAG};
 
-// ── GPIO pin assignments (SpotPear ESP32-S3-Touch-LCD-2) ─────────────────────
-// Source: framework/CLAUDE.md — verify against board schematic before use.
-static constexpr gpio_num_t LCD_MOSI = GPIO_NUM_2;
-static constexpr gpio_num_t LCD_SCLK = GPIO_NUM_4;
-static constexpr gpio_num_t LCD_MISO = GPIO_NUM_42;   // not used for write-only display
-static constexpr gpio_num_t LCD_CS   = GPIO_NUM_39;
-static constexpr gpio_num_t LCD_DC   = GPIO_NUM_41;
-static constexpr gpio_num_t LCD_RST  = GPIO_NUM_40;
-static constexpr gpio_num_t LCD_BL   = GPIO_NUM_6;
-static constexpr gpio_num_t TP_SDA   = GPIO_NUM_15;
-static constexpr gpio_num_t TP_SCL   = GPIO_NUM_7;
-static constexpr gpio_num_t TP_INT   = GPIO_NUM_17;
-static constexpr gpio_num_t TP_RST   = GPIO_NUM_16;
+// ── GPIO pin assignments (Waveshare ESP32-S3-Touch-LCD-2) ────────────────────
+// Source: Waveshare schematic (verified 2026-05-22).
+static constexpr gpio_num_t LCD_MOSI = GPIO_NUM_38;
+static constexpr gpio_num_t LCD_SCLK = GPIO_NUM_39;
+static constexpr gpio_num_t LCD_MISO = GPIO_NUM_NC;   // not used for write-only display
+static constexpr gpio_num_t LCD_CS   = GPIO_NUM_45;
+static constexpr gpio_num_t LCD_DC   = GPIO_NUM_42;
+static constexpr gpio_num_t LCD_RST  = GPIO_NUM_0;
+static constexpr gpio_num_t LCD_BL   = GPIO_NUM_1;
+static constexpr gpio_num_t TP_SDA   = GPIO_NUM_48;
+static constexpr gpio_num_t TP_SCL   = GPIO_NUM_47;
+static constexpr gpio_num_t TP_INT   = GPIO_NUM_46;
+static constexpr gpio_num_t TP_RST   = GPIO_NUM_0;    // shared reset line with LCD
 
 // ── Backlight LEDC config ─────────────────────────────────────────────────────
 static constexpr ledc_mode_t      BL_SPEED_MODE = LEDC_LOW_SPEED_MODE;
@@ -251,6 +251,7 @@ void DisplayContext::initLvgl() {
     disp_cfg.rotation.mirror_y   = false;
     disp_cfg.flags.buff_dma      = true;   // allocate from DMA-capable internal SRAM
     disp_cfg.flags.buff_spiram   = false;  // PSRAM not DMA-accessible via SPI master
+    disp_cfg.flags.swap_bytes    = true;   // RGB565 byte-order fix for Waveshare ST7789
     lvglDisp_ = lvgl_port_add_disp(&disp_cfg);
     if (!lvglDisp_) {
         log.error("lvgl_port_add_disp failed");
