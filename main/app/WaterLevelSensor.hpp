@@ -80,7 +80,7 @@ private:
 	// α = 0.95 at a 50 ms tick gives τ ≈ 1 s.
 	// α = 0.99 at a 50 ms tick gives τ ≈ 5 s.
 	// α = 0.995 at a 50 ms tick gives τ ≈ 10 s.
-    static constexpr float IIR_ALPHA    = 0.95f; // was 0.99f
+    static constexpr float IIR_ALPHA    = 0.9f; // was 0.99f
     float                  smoothedVolts_ {-1.0f};
 
     // ── Helpers ───────────────────────────────────────────────────────────
