@@ -67,14 +67,15 @@ void DisplayContext::start() {
     initTouch();
     initLvgl();
 
-    // Create all three screens (they register themselves with LVGL)
+    // Create all three screens and show the first.  taskLVGL is running by
+    // this point so all lv_* calls need the lock.
+    lvgl_port_lock(0);
     dashboard_.create(this);
     sysInfo_.create(this);
     calibrate_.create(this);
-
-    // Show page 1 by default
     currentPage_ = 0;
     dashboard_.show();
+    lvgl_port_unlock();
 
     log.info("display ready");
 }
@@ -246,7 +247,11 @@ void DisplayContext::initLvgl() {
     log.debug("LVGL init");
 
     // ── Initialise port ───────────────────────────────────────────────────
-    const lvgl_port_cfg_t port_cfg = ESP_LVGL_PORT_INIT_CONFIG();
+    // Pin taskLVGL to CPU1 so it never migrates to CPU0 where the main task
+    // lives.  Without affinity the FreeRTOS scheduler can schedule taskLVGL
+    // (priority 4) on CPU0, starving IDLE0 and triggering the task WDT.
+    lvgl_port_cfg_t port_cfg = ESP_LVGL_PORT_INIT_CONFIG();
+    port_cfg.task_affinity = 1;  // CPU1; main is pinned to CPU0
     ESP_ERROR_CHECK(lvgl_port_init(&port_cfg));
 
     // ── Add display — DMA-capable internal SRAM buffers ──────────────────
@@ -278,11 +283,15 @@ void DisplayContext::initLvgl() {
     }
 
     // ── Register custom touch indev ───────────────────────────────────────
+    // taskLVGL is already running after lvgl_port_init(); all raw lv_* calls
+    // must be made under the lock to prevent racing with lv_timer_handler().
+    lvgl_port_lock(0);
     lvglTouch_ = lv_indev_create();
     lv_indev_set_type(lvglTouch_, LV_INDEV_TYPE_POINTER);
     lv_indev_set_read_cb(lvglTouch_, touchReadCb);
     lv_indev_set_user_data(lvglTouch_, this);
     lv_indev_set_display(lvglTouch_, lvglDisp_);
+    lvgl_port_unlock();
 }
 
 // ── Static LVGL input-device callback ────────────────────────────────────────
