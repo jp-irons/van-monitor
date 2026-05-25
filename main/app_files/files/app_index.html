@@ -36,6 +36,7 @@
       <button class="app-tab active" data-tab="dashboard">Dashboard</button>
       <button class="app-tab"        data-tab="calibrate">Calibrate</button>
       <button class="app-tab"        data-tab="system">System</button>
+      <button class="app-tab"        data-tab="venus">Venus OS</button>
     </div>
 
     <!-- ── Dashboard tab ───────────────────────────────────────────────────── -->
@@ -114,6 +115,29 @@
       </div>
 
       <p id="sys-status" class="app-status-line">Loading…</p>
+    </div>
+
+    <!-- ── Venus OS tab ──────────────────────────────────────────────────── -->
+    <div id="tab-venus" class="app-tab-panel hidden">
+
+      <div class="app-section-title">Venus OS</div>
+
+      <div class="space-y-3 mb-4">
+        <div>
+          <label class="app-stat-label" for="venus-portal-id">Portal ID</label>
+          <input id="venus-portal-id" class="input-field mt-1"
+                 type="text" maxlength="31" placeholder="e.g. a1b2c3d4e5f6" autocomplete="off" />
+        </div>
+        <div>
+          <label class="app-stat-label" for="venus-broker-ip">Broker IP / hostname</label>
+          <input id="venus-broker-ip" class="input-field mt-1"
+                 type="text" maxlength="63" placeholder="venus.local" autocomplete="off" />
+        </div>
+      </div>
+
+      <button id="venus-save-btn" class="app-btn app-btn-blue">Save</button>
+
+      <p id="venus-status" class="app-status-line"></p>
     </div>
 
   </div>

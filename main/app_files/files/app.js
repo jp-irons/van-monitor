@@ -1,9 +1,10 @@
 (() => {
     'use strict';
 
-    const STATUS_API    = '/app/api/status';
-    const CALIBRATE_API = '/app/api/calibrate';
-    const REFRESH_MS    = 5_000;
+    const STATUS_API      = '/app/api/status';
+    const CALIBRATE_API   = '/app/api/calibrate';
+    const VENUS_CONFIG_API = '/app/api/venus/config';
+    const REFRESH_MS      = 5_000;
 
     let refreshTimer = null;
 
@@ -18,6 +19,7 @@
             panels.forEach(p => p.classList.add('hidden'));
             tab.classList.add('active');
             document.getElementById('tab-' + tab.dataset.tab).classList.remove('hidden');
+            if (tab.dataset.tab === 'venus') loadVenusConfig();
         });
     });
 
@@ -124,6 +126,54 @@
     function setCalButtonsDisabled(disabled) {
         document.getElementById('btn-mark-empty').disabled = disabled;
         document.getElementById('btn-mark-full').disabled  = disabled;
+    }
+
+    document.getElementById('venus-save-btn').addEventListener('click', saveVenusConfig);
+
+    // ── Venus OS config load / save ───────────────────────────────────────────
+
+    async function loadVenusConfig() {
+        setStatusLine('venus-status', '');
+        try {
+            const res  = await fetch(VENUS_CONFIG_API);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            document.getElementById('venus-broker-ip').value = data.broker_ip || 'venus.local';
+            document.getElementById('venus-portal-id').value = data.portal_id || '';
+        } catch (e) {
+            setStatusLine('venus-status', 'Could not load config');
+        }
+    }
+
+    async function saveVenusConfig() {
+        const brokerIp = document.getElementById('venus-broker-ip').value.trim();
+        const portalId = document.getElementById('venus-portal-id').value.trim();
+
+        if (!brokerIp) {
+            setStatusLine('venus-status', 'Broker IP / hostname is required');
+            return;
+        }
+
+        const btn = document.getElementById('venus-save-btn');
+        btn.disabled = true;
+        setStatusLine('venus-status', 'Saving…');
+        try {
+            const res  = await fetch(VENUS_CONFIG_API, {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body:    JSON.stringify({ broker_ip: brokerIp, portal_id: portalId }),
+            });
+            const data = await res.json();
+            if (!res.ok || data.error) {
+                setStatusLine('venus-status', 'Error: ' + (data.error || res.status));
+            } else {
+                setStatusLine('venus-status', 'Saved ✓');
+            }
+        } catch (e) {
+            setStatusLine('venus-status', 'Could not reach device');
+        } finally {
+            btn.disabled = false;
+        }
     }
 
     // ── Settings dropdown ─────────────────────────────────────────────────────

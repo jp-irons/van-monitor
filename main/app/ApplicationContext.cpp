@@ -21,6 +21,7 @@ namespace app {
 	    , appState_{}
 	    , statusHandler_(appState_)
 	    , calibrateHandler_(appState_)
+	    , venusConfigHandler_()
 	    , display_() {
 	    log.debug("constructor");
 	}
@@ -45,9 +46,11 @@ namespace app {
 	    fw_.setEntryPoint("/app/ui/");
 
 	    // ── Register app API routes ────────────────────────────────────────────
-	    fw_.addRoute(http::HttpMethod::Get,  "/app/api/temperature", &temperatureHandler_);
-	    fw_.addRoute(http::HttpMethod::Get,  "/app/api/status",      &statusHandler_);
-	    fw_.addRoute(http::HttpMethod::Post, "/app/api/calibrate",   &calibrateHandler_);
+	    fw_.addRoute(http::HttpMethod::Get,  "/app/api/temperature",  &temperatureHandler_);
+	    fw_.addRoute(http::HttpMethod::Get,  "/app/api/status",       &statusHandler_);
+	    fw_.addRoute(http::HttpMethod::Post, "/app/api/calibrate",    &calibrateHandler_);
+	    fw_.addRoute(http::HttpMethod::Get,  "/app/api/venus/config", &venusConfigHandler_);
+	    fw_.addRoute(http::HttpMethod::Post, "/app/api/venus/config", &venusConfigHandler_);
 
 	    // ── Configure pull-based OTA ──────────────────────────────────────────
 	    // baseUrl            — GitHub Releases download directory for this repo.

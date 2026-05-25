@@ -9,6 +9,7 @@ idf_component_register(
         app/TemperatureHandler.cpp
         app/StatusHandler.cpp
         app/CalibrateHandler.cpp
+        app/VenusConfigHandler.cpp
         app/WaterLevelSensor.cpp
         app_files/AppFileTable.cpp
     REQUIRES
