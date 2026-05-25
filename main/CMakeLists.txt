@@ -10,6 +10,7 @@ idf_component_register(
         app/StatusHandler.cpp
         app/CalibrateHandler.cpp
         app/VenusConfigHandler.cpp
+        app/VenusMqttClient.cpp
         app/WaterLevelSensor.cpp
         app_files/AppFileTable.cpp
     REQUIRES
