@@ -28,7 +28,8 @@ struct BatteryData {
     float soc;            // 0.0 – 100.0  (from Venus OS)
     float voltage;        // V
     float current;        // A (positive = charging)
-    float solarW;         // W
+    float solarW;         // W  — instantaneous solar power
+    float solarYieldKwh;  // kWh — solar energy harvested today
     float loadW;          // W
 };
 

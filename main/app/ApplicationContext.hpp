@@ -7,6 +7,7 @@
 #include "StatusHandler.hpp"
 #include "TemperatureHandler.hpp"
 #include "VenusConfigHandler.hpp"
+#include "VenusMqttClient.hpp"
 #include "WaterLevelSensor.hpp"
 #include "DisplayContext.hpp"
 #include "framework/FrameworkContext.hpp"
@@ -64,6 +65,7 @@ namespace app {
      StatusHandler       statusHandler_;
      CalibrateHandler    calibrateHandler_;
      VenusConfigHandler  venusConfigHandler_;
+     VenusMqttClient     venusClient_;
 
      // Loop tick counter — passed to WaterLevelSensor::poll() so it can
      // throttle NVS calibration refreshes without its own timer.

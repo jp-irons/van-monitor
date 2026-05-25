@@ -48,7 +48,7 @@ common::Result StatusHandler::handle(http::HttpRequest& /*req*/,
     const char* fwVersion = (desc && desc->version[0]) ? desc->version : "unknown";
 
     // ── Build JSON ────────────────────────────────────────────────────────────
-    char body[640];
+    char body[680];
     snprintf(body, sizeof(body),
         "{"
           "\"water\":{"
@@ -66,6 +66,7 @@ common::Result StatusHandler::handle(http::HttpRequest& /*req*/,
             "\"voltage\":%.2f,"
             "\"current\":%.2f,"
             "\"solarW\":%.1f,"
+            "\"solarYieldKwh\":%.2f,"
             "\"loadW\":%.1f"
           "},"
           "\"system\":{"
@@ -85,6 +86,7 @@ common::Result StatusHandler::handle(http::HttpRequest& /*req*/,
         state_.battery.voltage,
         state_.battery.current,
         state_.battery.solarW,
+        state_.battery.solarYieldKwh,
         state_.battery.loadW,
         (unsigned long)uptimeS,
         fwVersion

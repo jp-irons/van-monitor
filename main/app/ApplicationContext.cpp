@@ -22,6 +22,7 @@ namespace app {
 	    , statusHandler_(appState_)
 	    , calibrateHandler_(appState_)
 	    , venusConfigHandler_()
+	    , venusClient_()
 	    , display_() {
 	    log.debug("constructor");
 	}
@@ -123,6 +124,11 @@ namespace app {
 	    // Called after fw_.start() so NVS is guaranteed initialised; init()
 	    // calls loadCalibrationFromNvs() immediately to prime the cal values.
 	    waterLevelSensor_.init();
+
+	    // ── Start Venus OS MQTT client ────────────────────────────────────────
+	    // Reads broker_ip / portal_id from NVS; no-op if not yet configured.
+	    // The client retries connection automatically once WiFi associates.
+	    venusClient_.start();
 	}
 
 	void ApplicationContext::loop() {
@@ -133,8 +139,14 @@ namespace app {
 
 	    // Poll ADC, update shared state, push to display (when present)
 	    waterLevelSensor_.poll(appState_.water, loopTick_);
+
+	    // Venus OS MQTT keepalive pump + pull latest battery values into shared state
+	    venusClient_.loop(loopTick_);
+	    venusClient_.fillBattery(appState_.battery);
+
 #if CONFIG_VAN_MONITOR_DISPLAY_ENABLED
 	    display_.updateWaterLevel(appState_.water);
+	    display_.updateBattery(appState_.battery);
 #endif
 
 	    // Push system info to display once per second (every 20 ticks × 50 ms)
@@ -174,20 +186,25 @@ namespace app {
 	        sysIP_ = "---";
 	    }
 
-	    // ── Build and push ────────────────────────────────────────────────────
-	    uint32_t uptimeS = static_cast<uint32_t>(esp_timer_get_time() / 1'000'000ULL);
+	    // ── Venus OS status ──────────� ───────────────────────────────────────────
+    bool        mqttOk    = venusClient_.isConnected();
+    const char* portalId  = venusClient_.portalId();
+    bool        venusOk   = mqttOk && portalId[0] != '\0';
 
-	    display::SystemData sd = {};
-	    sd.ssid            = sysSSID_.c_str();
-	    sd.rssi            = sysRssi_;
-	    sd.ipAddr          = sysIP_.c_str();
-	    sd.hostname        = sysHost_.c_str();
-	    sd.mqttOk          = false;
-	    sd.venusPortalId   = "---";
-	    sd.venusOk         = false;
-	    sd.uptimeS         = uptimeS;
-	    sd.firmwareVersion = sysFwVer_.c_str();
-	    display_.updateSystem(sd);
-	}
+    // ── Build and push ────────────────────────────────────────────────────
+    uint32_t uptimeS = static_cast<uint32_t>(esp_timer_get_time() / 1'000'000ULL);
+
+    display::SystemData sd = {};
+    sd.ssid            = sysSSID_.c_str();
+    sd.rssi            = sysRssi_;
+    sd.ipAddr          = sysIP_.c_str();
+    sd.hostname        = sysHost_.c_str();
+    sd.mqttOk          = mqttOk;
+    sd.venusPortalId   = portalId[0] ? portalId : "---";
+    sd.venusOk         = venusOk;
+    sd.uptimeS         = uptimeS;
+    sd.firmwareVersion = sysFwVer_.c_str();
+    display_.updateSystem(sd);
+}
 
 } // namespace app

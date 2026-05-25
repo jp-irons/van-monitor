@@ -57,11 +57,12 @@
         document.getElementById('water-gauge').style.width =
             pct !== null ? Math.max(0, Math.min(100, pct)) + '%' : '0%';
 
-        setText('bat-soc',     fmt(b.soc,     1, ' %'));
-        setText('bat-voltage', fmt(b.voltage,  1, ' V'));
-        setText('bat-current', fmt(b.current,  1, ' A'));
-        setText('bat-solar',   fmt(b.solarW,   0, ' W'));
-        setText('bat-load',    fmt(b.loadW,    0, ' W'));
+        setText('bat-soc',         fmt(b.soc,           1, ' %'));
+        setText('bat-voltage',     fmt(b.voltage,        1, ' V'));
+        setText('bat-current',     fmt(b.current,        1, ' A'));
+        setText('bat-solar',       fmt(b.solarW,         0, ' W'));
+        setText('bat-solar-yield', fmt(b.solarYieldKwh,  2, ' kWh'));
+        setText('bat-load',        fmt(b.loadW,          0, ' W'));
     }
 
     // ── Calibrate rendering ───────────────────────────────────────────────────
