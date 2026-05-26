@@ -2,7 +2,6 @@
 
 #include "logger/Logger.hpp"
 
-#include "nvs_flash.h"
 #include "nvs.h"
 
 #include <algorithm>
