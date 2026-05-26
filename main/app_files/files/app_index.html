@@ -132,6 +132,17 @@
           <input id="venus-broker-ip" class="input-field mt-1"
                  type="text" maxlength="63" placeholder="venus.local" autocomplete="off" />
         </div>
+        <div>
+          <label class="app-stat-label" for="venus-solar-inst1">Solar charger instance</label>
+          <input id="venus-solar-inst1" class="input-field mt-1"
+                 type="number" min="0" max="65535" placeholder="258" autocomplete="off" />
+          <p class="app-cal-hint mt-1">VE.Direct device instance number (check Venus OS MQTT or Device List)</p>
+        </div>
+        <div>
+          <label class="app-stat-label" for="venus-solar-inst2">Second solar charger instance <span class="font-normal opacity-60">(0 = none)</span></label>
+          <input id="venus-solar-inst2" class="input-field mt-1"
+                 type="number" min="0" max="65535" placeholder="0" autocomplete="off" />
+        </div>
       </div>
 
       <button id="venus-save-btn" class="app-btn app-btn-blue">Save</button>

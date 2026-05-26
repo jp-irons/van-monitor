@@ -200,6 +200,7 @@ namespace app {
     sd.ipAddr          = sysIP_.c_str();
     sd.hostname        = sysHost_.c_str();
     sd.mqttOk          = mqttOk;
+    sd.mqttBrokerIp    = venusClient_.brokerIp();
     sd.venusPortalId   = portalId[0] ? portalId : "---";
     sd.venusOk         = venusOk;
     sd.uptimeS         = uptimeS;

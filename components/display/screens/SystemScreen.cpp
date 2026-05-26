@@ -171,7 +171,7 @@ void SystemScreen::update(const SystemData& data) {
     lv_label_set_text(valHost_, data.hostname);
 
     // MQTT
-    lv_label_set_text(valMqtt_, "venus.local:1883");
+    lv_label_set_text(valMqtt_, data.mqttBrokerIp && data.mqttBrokerIp[0] ? data.mqttBrokerIp : "-");
     lv_obj_set_style_bg_color(badgeMqtt_,
         data.mqttOk ? lv_color_hex(0x14532d) : lv_color_hex(0x4c1d1d),
         LV_PART_MAIN);

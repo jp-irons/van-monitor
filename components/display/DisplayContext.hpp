@@ -35,10 +35,11 @@ struct BatteryData {
 
 struct SystemData {
     const char* ssid;
-    int         rssi;        // dBm
+    int         rssi;           // dBm
     const char* ipAddr;
     const char* hostname;
     bool        mqttOk;
+    const char* mqttBrokerIp;   // broker hostname or IP — shown on system screen
     const char* venusPortalId;
     bool        venusOk;
     uint32_t    uptimeS;

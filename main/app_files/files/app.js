@@ -139,16 +139,20 @@
             const res  = await fetch(VENUS_CONFIG_API);
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const data = await res.json();
-            document.getElementById('venus-broker-ip').value = data.broker_ip || 'venus.local';
-            document.getElementById('venus-portal-id').value = data.portal_id || '';
+            document.getElementById('venus-broker-ip').value    = data.broker_ip    || 'venus.local';
+            document.getElementById('venus-portal-id').value    = data.portal_id    || '';
+            document.getElementById('venus-solar-inst1').value  = data.solar_inst1  ?? 258;
+            document.getElementById('venus-solar-inst2').value  = data.solar_inst2  ?? 0;
         } catch (e) {
             setStatusLine('venus-status', 'Could not load config');
         }
     }
 
     async function saveVenusConfig() {
-        const brokerIp = document.getElementById('venus-broker-ip').value.trim();
-        const portalId = document.getElementById('venus-portal-id').value.trim();
+        const brokerIp   = document.getElementById('venus-broker-ip').value.trim();
+        const portalId   = document.getElementById('venus-portal-id').value.trim();
+        const solarInst1 = parseInt(document.getElementById('venus-solar-inst1').value, 10) || 258;
+        const solarInst2 = parseInt(document.getElementById('venus-solar-inst2').value, 10) || 0;
 
         if (!brokerIp) {
             setStatusLine('venus-status', 'Broker IP / hostname is required');
@@ -162,7 +166,12 @@
             const res  = await fetch(VENUS_CONFIG_API, {
                 method:  'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body:    JSON.stringify({ broker_ip: brokerIp, portal_id: portalId }),
+                body:    JSON.stringify({
+                    broker_ip:   brokerIp,
+                    portal_id:   portalId,
+                    solar_inst1: solarInst1,
+                    solar_inst2: solarInst2,
+                }),
             });
             const data = await res.json();
             if (!res.ok || data.error) {
