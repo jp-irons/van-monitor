@@ -200,7 +200,10 @@ namespace app {
     sd.ipAddr          = sysIP_.c_str();
     sd.hostname        = sysHost_.c_str();
     sd.mqttOk          = mqttOk;
+<<<<<<< HEAD
     sd.mqttBrokerIp    = venusClient_.brokerIp();
+=======
+>>>>>>> branch 'development' of https://github.com/jp-irons/van-monitor
     sd.venusPortalId   = portalId[0] ? portalId : "---";
     sd.venusOk         = venusOk;
     sd.uptimeS         = uptimeS;
