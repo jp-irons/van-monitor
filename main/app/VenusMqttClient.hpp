@@ -78,6 +78,7 @@ public:
      * Returns an empty string if portal_id was not configured.
      * Lifetime: valid for the lifetime of this object.
      */
+    const char* brokerIp() const { return brokerIp_; }
     const char* portalId() const { return portalId_; }
 
 private:

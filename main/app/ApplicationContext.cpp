@@ -186,25 +186,27 @@ namespace app {
 	        sysIP_ = "---";
 	    }
 
-	    // ── Venus OS status ──────────� ───────────────────────────────────────────
-    bool        mqttOk    = venusClient_.isConnected();
-    const char* portalId  = venusClient_.portalId();
-    bool        venusOk   = mqttOk && portalId[0] != '\0';
+		    // ── Venus OS status ───────────────────────────────────────────────────────
+	    bool        mqttOk    = venusClient_.isConnected();
+	    const char* brokerIp  = venusClient_.brokerIp();
+	    const char* portalId  = venusClient_.portalId();
+	    bool        venusOk   = mqttOk && portalId[0] != '\0';
 
-    // ── Build and push ────────────────────────────────────────────────────
-    uint32_t uptimeS = static_cast<uint32_t>(esp_timer_get_time() / 1'000'000ULL);
+	    // ── Build and push ────────────────────────────────────────────────────────
+	    uint32_t uptimeS = static_cast<uint32_t>(esp_timer_get_time() / 1'000'000ULL);
 
-    display::SystemData sd = {};
-    sd.ssid            = sysSSID_.c_str();
-    sd.rssi            = sysRssi_;
-    sd.ipAddr          = sysIP_.c_str();
-    sd.hostname        = sysHost_.c_str();
-    sd.mqttOk          = mqttOk;
-    sd.venusPortalId   = portalId[0] ? portalId : "---";
-    sd.venusOk         = venusOk;
-    sd.uptimeS         = uptimeS;
-    sd.firmwareVersion = sysFwVer_.c_str();
-    display_.updateSystem(sd);
-}
+	    display::SystemData sd = {};
+	    sd.ssid            = sysSSID_.c_str();
+	    sd.rssi            = sysRssi_;
+	    sd.ipAddr          = sysIP_.c_str();
+	    sd.hostname        = sysHost_.c_str();
+	    sd.mqttOk          = mqttOk;
+	    sd.mqttBrokerIp    = brokerIp[0] ? brokerIp : "---";
+	    sd.venusPortalId   = portalId[0] ? portalId : "---";
+	    sd.venusOk         = venusOk;
+	    sd.uptimeS         = uptimeS;
+	    sd.firmwareVersion = sysFwVer_.c_str();
+	    display_.updateSystem(sd);
+	}
 
 } // namespace app
