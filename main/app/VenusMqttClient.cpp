@@ -178,7 +178,6 @@ void VenusMqttClient::onEvent(esp_mqtt_event_handle_t event) {
 
         case MQTT_EVENT_ERROR:
             log.warn("MQTT error — type %d", (int)event->error_handle->error_type);
-            connected_ = false;
             break;
 
         default:
