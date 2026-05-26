@@ -64,6 +64,8 @@ namespace app {
 	    //                      automatically; false = disabled until toggled on.
 	    //                      When uiSettable=true, a user-persisted NVS value
 	    //                      overrides this default after the first toggle.
+	    //                      Has no effect if checkIntervalS is 0 — no
+	    //                      background task runs to honour the setting.
 	    // uiSettable         — When true, the firmware UI exposes an enable/disable
 	    //                      toggle and the POST /firmware/autoUpdate API is
 	    //                      accepted; the user's choice survives reboots via NVS.
