@@ -186,7 +186,7 @@ namespace app {
 	        sysIP_ = "---";
 	    }
 
-	    // ── Venus OS status ──────────� ───────────────────────────────────────────
+	    // ── Venus OS status ──────────� ───────────────────────────────────────────
     bool        mqttOk    = venusClient_.isConnected();
     const char* portalId  = venusClient_.portalId();
     bool        venusOk   = mqttOk && portalId[0] != '\0';
@@ -200,7 +200,6 @@ namespace app {
     sd.ipAddr          = sysIP_.c_str();
     sd.hostname        = sysHost_.c_str();
     sd.mqttOk          = mqttOk;
-    sd.mqttBrokerIp    = venusClient_.brokerIp();
     sd.venusPortalId   = portalId[0] ? portalId : "---";
     sd.venusOk         = venusOk;
     sd.uptimeS         = uptimeS;
