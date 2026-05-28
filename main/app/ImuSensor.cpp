@@ -1,11 +1,9 @@
 #include "ImuSensor.hpp"
 
 #include "logger/Logger.hpp"
-#include "nvs_flash.h"
 #include "nvs.h"
 
 #include <cmath>
-#include <algorithm>
 
 namespace app {
 
