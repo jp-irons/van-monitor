@@ -21,6 +21,12 @@ https://docs.waveshare.com/ESP32-S3-AMOLED-1.91?variant=ESP32-S3-AMOLED-1.91
 
 - **Internal temperature** — ESP32-S3 internal sensor exposed at `GET /app/api/temperature` → `{"celsius": 42.5}`
 - **Embedded web UI** — served from LittleFS; root `/` redirects to `/app/ui/`
+- **Touch display UI** — LVGL dark-theme UI on ST7789T3; three pages: Dashboard, Calibrate, System
+  - Frame buffers in PSRAM; DMA buffers in internal SRAM
+  - Auto-dims after 30 s inactivity; brightens on touch
+- **Tilt / level display** — 96 × 96 crosshair widget on the Dashboard shows van pitch and roll in real time
+  - Dot colour: green ≤ 1°, amber 1–3°, red > 3°; degree readouts below the widget
+  - **Zero calibration** — hold the Zero button (1.5 s) on the Calibrate screen to store the current orientation as level; one press calibrates whichever axis the device is currently dominant on. Zero the device in two different orientations (e.g. portrait mount and flat) and it will work correctly in any installed orientation.
 - All framework features: Wi-Fi provisioning, mDNS, OTA with rollback, per-device TLS, NVS-backed network store
 
 ### Planned
@@ -28,11 +34,9 @@ https://docs.waveshare.com/ESP32-S3-AMOLED-1.91?variant=ESP32-S3-AMOLED-1.91
 1. **Water level sensor** — 4–20 mA current loop, 0–2 m range, shunt resistor to ADC
    - 2-point calibration (Empty / Full buttons at known states)
    - Formula: `level_m = (voltage - 0.6) / 2.4 * 2.0`
-2. **Touch display UI** — LVGL on ST7789T3, showing water level, battery SOC, and solar yield
-   - Frame buffers in PSRAM; DMA buffers in internal SRAM
-3. **Venus OS MQTT** — subscribe to battery SOC and solar yield from a Venus OS broker (port 1883)
+2. **Venus OS MQTT** — subscribe to battery SOC and solar yield from a Venus OS broker (port 1883)
    - Publish water level; send keepalive every ~60 s to `R/<portal_id>/keepalive`
-4. **OTA pull** — pull firmware from GitHub Releases, triggered via MQTT topic
+3. **OTA pull** — pull firmware from GitHub Releases, triggered via MQTT topic
 
 ## Repository layout
 
