@@ -20,6 +20,10 @@ namespace display::theme {
 static constexpr float ALARM_LOW_PCT  = 10.0f;
 static constexpr float ALARM_HIGH_PCT = 90.0f;
 
+// ── Level alarm thresholds (degrees) ────────────────────────────────────────
+static constexpr float LEVEL_WARN_DEG = 1.0f;   // amber
+static constexpr float LEVEL_ERR_DEG  = 3.0f;   // red
+
 // ── Layout constants (pixels) ────────────────────────────────────────────────
 static constexpr int LCD_W        = 240;
 static constexpr int LCD_H        = 320;
@@ -45,13 +49,18 @@ inline lv_color_t CYAN()     { return lv_color_hex(0x38bdf8); }  // water level 
 inline lv_color_t GREEN()    { return lv_color_hex(0x4ade80); }  // battery (normal / good)
 inline lv_color_t AMBER()    { return lv_color_hex(0xf97316); }  // near-empty / near-full
 inline lv_color_t RED()      { return lv_color_hex(0xef4444); }  // critical (battery)
-inline lv_color_t BLUE()     { return lv_color_hex(0x1d6fa8); }  // Mark Empty button bg
-inline lv_color_t BLUE_BDR() { return lv_color_hex(0x60b4f0); }  // Mark Empty button border
-inline lv_color_t DARK_GRN() { return lv_color_hex(0x166534); }  // Mark Full button bg
-inline lv_color_t GRN_BDR()  { return lv_color_hex(0x4ade80); }  // Mark Full button border
+inline lv_color_t BLUE()     { return lv_color_hex(0x1d6fa8); }  // Empty button bg
+inline lv_color_t BLUE_BDR() { return lv_color_hex(0x60b4f0); }  // Empty button border
+inline lv_color_t DARK_GRN() { return lv_color_hex(0x166534); }  // Full button bg
+inline lv_color_t GRN_BDR()  { return lv_color_hex(0x4ade80); }  // Full button border
+inline lv_color_t TEAL()     { return lv_color_hex(0x134e4a); }  // Flat tilt button bg
+inline lv_color_t TEAL_BDR() { return lv_color_hex(0x2dd4bf); }  // Flat tilt button border
 
 // Track / inactive areas
 inline lv_color_t TRACK()    { return lv_color_hex(0x1f2937); }
+
+// Alarm text colour (used on coloured alarm backgrounds)
+inline lv_color_t BLACK()    { return lv_color_hex(0x000000); }
 
 // ── Opacity helpers ──────────────────────────────────────────────────────────
 static constexpr lv_opa_t OPA_FULL = LV_OPA_COVER;

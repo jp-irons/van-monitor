@@ -41,7 +41,7 @@ struct TouchPoint {
  * level static so cst816d_read() can be called without arguments.
  *
  * @param bus       Existing I2C master bus handle (already initialised).
- * @param rst_gpio  RST pin number (GPIO 16 on SpotPear board).
+ * @param rst_gpio  RST pin number (GPIO 16 on Waveshare ESP32-S3 2-inch Touch LCD).
  * @param int_gpio  INT pin number (GPIO 17) — configured as input, not used
  *                  for interrupts in this driver (polling mode).
  */

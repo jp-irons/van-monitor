@@ -12,6 +12,7 @@ idf_component_register(
         app/VenusConfigHandler.cpp
         app/VenusMqttClient.cpp
         app/WaterLevelSensor.cpp
+        app/ImuSensor.cpp
         app_files/AppFileTable.cpp
     REQUIRES
         auth
@@ -26,6 +27,8 @@ idf_component_register(
         logger
         ota
         wifi_manager
+        driver
+        nvs_flash
         esp_adc
         esp_driver_tsens
         esp_wifi

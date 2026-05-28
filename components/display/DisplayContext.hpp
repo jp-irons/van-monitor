@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <functional>
 
+
 namespace display {
 
 // ── Data types passed in from ApplicationContext ─────────────────────────────
@@ -31,6 +32,11 @@ struct BatteryData {
     float solarW;         // W  — instantaneous solar power
     float solarYieldKwh;  // kWh — solar energy harvested today
     float loadW;          // W
+};
+
+struct LevelData {
+    float tiltX;   // degrees — left/right tilt relative to screen face
+    float tiltY;   // degrees — top/bottom tilt relative to screen face
 };
 
 struct SystemData {
@@ -105,6 +111,17 @@ public:
     /** Push latest sensor readings to the dashboard screen. */
     void updateWaterLevel(const WaterData& data);
     void updateBattery(const BatteryData& data);
+    void updateLevel(const LevelData& data);
+
+    /**
+     * Register the callback invoked when the user long-presses the Flat button
+     * on the calibration screen.  Typically wired to ImuSensor::zero() by
+     * ApplicationContext after both objects are initialised.
+     */
+    void setTiltFlatCallback(std::function<void()> cb);
+
+    /** Expose the I2C bus handle so ApplicationContext can share it with ImuSensor. */
+    i2c_master_bus_handle_t getI2cBus() const;
 
     /** Push connection / system state to the system-info screen. */
     void updateSystem(const SystemData& data);

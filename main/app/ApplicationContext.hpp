@@ -9,6 +9,7 @@
 #include "VenusConfigHandler.hpp"
 #include "VenusMqttClient.hpp"
 #include "WaterLevelSensor.hpp"
+#include "ImuSensor.hpp"
 #include "DisplayContext.hpp"
 #include "framework/FrameworkContext.hpp"
 #include "framework_files/EmbeddedFileHandler.hpp"
@@ -71,10 +72,13 @@ namespace app {
      // throttle NVS calibration refreshes without its own timer.
      uint32_t loopTick_ {0};
 
-     // display_ is declared last — it has no dependency on fw_ at construction
-     // time but start() must be called after fw_.start() to ensure NVS is ready
-     // (CalibrateScreen reads calibration values from NVS on first load).
+     // display_ is declared before imuSensor_ — display_.start() initialises
+     // the shared I2C bus; imuSensor_.init() must be called after.
      display::DisplayContext display_;
+
+     // imuSensor_ is declared after display_: init() is called in start() once
+     // the I2C bus is live (via display_.getI2cBus()).
+     ImuSensor imuSensor_;
 
      // ── Cached system-screen fields ───────────────────────────────────────
      // Updated once per second in loop(); strings outlive each updateSystem() call.

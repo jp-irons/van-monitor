@@ -4,7 +4,7 @@ ESP32-S3 monitoring application for a campervan, built on the [embedded-framewor
 
 ## Hardware
 
-**SpotPear ESP32-S3-Touch-LCD-2**
+**Waveshare ESP32-S3-Touch-LCD-2** (sourced via SpotPear)
 
 | Peripheral | Part |
 |---|---|

@@ -102,6 +102,21 @@ void DisplayContext::updateBattery(const BatteryData& data) {
     lvgl_port_unlock();
 }
 
+void DisplayContext::updateLevel(const LevelData& data) {
+    lvgl_port_lock(0);
+    dashboard_.updateLevel(data);
+    calibrate_.updateLevel(data);
+    lvgl_port_unlock();
+}
+
+void DisplayContext::setTiltFlatCallback(std::function<void()> cb) {
+    calibrate_.setFlatCallback(std::move(cb));
+}
+
+i2c_master_bus_handle_t DisplayContext::getI2cBus() const {
+    return i2cBus_;
+}
+
 void DisplayContext::updateSystem(const SystemData& data) {
     lvgl_port_lock(0);
     sysInfo_.update(data);

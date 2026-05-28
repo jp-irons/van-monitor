@@ -20,6 +20,7 @@ namespace app {
 struct AppState {
     display::WaterData   water   = {};   // updated each loop() once ADC is wired
     display::BatteryData battery = {};   // stub zeros until Venus OS MQTT lands
+    display::LevelData   level   = {};   // updated each loop() by ImuSensor::poll()
 };
 
 } // namespace app

@@ -37,6 +37,8 @@ void setupLogging() {
     LogSinkRegistry::setLevelForTag(app::ApplicationContext::TAG, LogLevel::Debug);
 	LogSinkRegistry::setLevelForTag(AppFileTable::TAG, LogLevel::Debug);
 	LogSinkRegistry::setLevelForTag(app::ActivityManager::TAG, LogLevel::Debug);
+    LogSinkRegistry::setLevelForTag(app::ImuSensor::TAG,            LogLevel::Info);
+    LogSinkRegistry::setLevelForTag(display::CalibrateScreen::TAG,  LogLevel::Info);
 
     // ── Framework internals — uncomment to debug framework components ──────
     // API handlers

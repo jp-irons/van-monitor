@@ -101,6 +101,10 @@ namespace app {
 #if CONFIG_VAN_MONITOR_DISPLAY_ENABLED
 	    display_.start();
 	    display_.setActivityCallback([this] { activityManager_.poke(); });
+
+	    // ── Initialise IMU — must follow display_.start() (I2C bus is now live)
+	    imuSensor_.init(display_.getI2cBus());
+	    display_.setTiltFlatCallback([this] { imuSensor_.zero(); });
 #endif
 
 	    // ── Start activity manager ────────────────────────────────────────────
@@ -149,6 +153,8 @@ namespace app {
 #if CONFIG_VAN_MONITOR_DISPLAY_ENABLED
 	    display_.updateWaterLevel(appState_.water);
 	    display_.updateBattery(appState_.battery);
+	    imuSensor_.poll(appState_.level);
+	    display_.updateLevel(appState_.level);
 #endif
 
 	    // Push system info to display once per second (every 20 ticks × 50 ms)

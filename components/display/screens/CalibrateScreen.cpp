@@ -4,29 +4,43 @@
 
 #include "nvs_flash.h"
 #include "nvs.h"
-#include "esp_log.h"
+#include "logger/Logger.hpp"
 
 #include <cstdio>
 #include <algorithm>
 
-static const char* TAG     = "CalibrateScreen";
-static const char* NVS_NS  = "water_cal";
+static logger::Logger     log{display::CalibrateScreen::TAG};
+static const char* NVS_NS = "water_cal";
 
 namespace display {
 
 using namespace theme;
 
+// ── Layout constants ──────────────────────────────────────────────────────────
+
+static constexpr int CAP_Y          = HEADER_H + 8;                            //  36 — capacity row top
+static constexpr int WATER_DIV_Y    = CAP_Y + 36 + 8;                          //  80 — "WATER LEVEL" label
+static constexpr int WATER_PANEL_Y  = WATER_DIV_Y + 14;                        //  94 — combined water panel top
+static constexpr int WATER_PANEL_H  = 104;                                      //      (Empty row + Full row + voltage)
+static constexpr int TILT_DIV_Y     = WATER_PANEL_Y + WATER_PANEL_H + 8;       // 206 — "TILT" label
+static constexpr int FLAT_Y         = TILT_DIV_Y + 14;                         // 220 — Zero/Flat row top
+
+// Derived: FLAT bottom = 220+40 = 260; NAV starts at 284 → 24 px gap
+
+static constexpr int ROW_W          = LCD_W - 16;                              // 224 — row container width
+static constexpr int ROW_H          = 40;
+static constexpr int BTN_W          = 76;
+static constexpr int BTN_H          = 28;
+
 // ── Construction ──────────────────────────────────────────────────────────────
 
 CalibrateScreen::CalibrateScreen() {
-    // Load persisted calibration values from NVS (best-effort)
     nvs_handle_t h;
     if (nvs_open(NVS_NS, NVS_READONLY, &h) == ESP_OK) {
         uint32_t cap = 0;
         if (nvs_get_u32(h, "tank_litres", &cap) == ESP_OK && cap > 0) {
             capacityL_ = cap;
         }
-        // NVS doesn't have a native float getter — store as uint32 bit-cast
         uint32_t bits = 0;
         if (nvs_get_u32(h, "cal_v_empty_b", &bits) == ESP_OK) {
             calVEmpty_ = *reinterpret_cast<float*>(&bits);
@@ -38,6 +52,12 @@ CalibrateScreen::CalibrateScreen() {
     }
 }
 
+// ── setFlatCallback ───────────────────────────────────────────────────────────
+
+void CalibrateScreen::setFlatCallback(std::function<void()> cb) {
+    onFlatCb_ = std::move(cb);
+}
+
 // ── Nav callback ──────────────────────────────────────────────────────────────
 
 static void navCb(lv_event_t* e) {
@@ -45,9 +65,89 @@ static void navCb(lv_event_t* e) {
     ctx->nextPage();
 }
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+/** Build a section-divider label ("WATER LEVEL" / "TILT"). */
+static lv_obj_t* makeDivLabel(lv_obj_t* parent, int y, const char* text) {
+    lv_obj_t* lbl = lv_label_create(parent);
+    lv_label_set_text(lbl, text);
+    lv_obj_set_style_text_color(lbl, TEXT_MUT(), LV_PART_MAIN);
+    lv_obj_set_style_text_font(lbl, &lv_font_montserrat_10, LV_PART_MAIN);
+    lv_obj_set_pos(lbl, 8, y);
+    return lbl;
+}
+
+/**
+ * Build a calibration-action row.
+ *
+ *  ┌──────────────────────────────────────────────────────┐
+ *  │  <initValue>  (font 12, primary, left-mid)  ┌──────┐ │
+ *  │                                             │ btn  │ │
+ *  │                                             └──────┘ │
+ *  └──────────────────────────────────────────────────────┘
+ *
+ * The value label pointer is written to *valueOut so the caller can update
+ * it later via updateCalDisplay() / updateLevel().
+ * Returns the button object.
+ */
+static lv_obj_t* makeCalRow(lv_obj_t* parent, int y,
+                             const char* initValue,
+                             lv_color_t btnBg, lv_color_t btnBdr,
+                             const char* btnLabel,
+                             lv_obj_t** valueOut) {
+    // Row container
+    lv_obj_t* row = lv_obj_create(parent);
+    lv_obj_set_size(row, ROW_W, ROW_H);
+    lv_obj_set_pos(row, 8, y);
+    lv_obj_set_style_bg_color(row, SURFACE(), LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(row, OPA_FULL, LV_PART_MAIN);
+    lv_obj_set_style_border_color(row, BORDER(), LV_PART_MAIN);
+    lv_obj_set_style_border_width(row, 1, LV_PART_MAIN);
+    lv_obj_set_style_radius(row, 6, LV_PART_MAIN);
+    lv_obj_set_style_pad_all(row, 0, LV_PART_MAIN);
+    lv_obj_clear_flag(row, LV_OBJ_FLAG_SCROLLABLE);
+
+    // Value label — left-aligned, vertically centred, constrained so it
+    // cannot overflow into the button area.
+    lv_obj_t* valLbl = lv_label_create(row);
+    lv_label_set_text(valLbl, initValue);
+    lv_obj_set_style_text_color(valLbl, TEXT_PRI(), LV_PART_MAIN);
+    lv_obj_set_style_text_font(valLbl, &lv_font_montserrat_12, LV_PART_MAIN);
+    lv_obj_set_width(valLbl, ROW_W - BTN_W - 22);   // stay left of button
+    lv_obj_align(valLbl, LV_ALIGN_LEFT_MID, 10, 0);
+    *valueOut = valLbl;
+
+    // Action button (right-aligned)
+    lv_obj_t* btn = lv_obj_create(row);
+    lv_obj_set_size(btn, BTN_W, BTN_H);
+    lv_obj_align(btn, LV_ALIGN_RIGHT_MID, -6, 0);
+    lv_obj_set_style_bg_color(btn, btnBg, LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(btn, OPA_FULL, LV_PART_MAIN);
+    lv_obj_set_style_border_color(btn, btnBdr, LV_PART_MAIN);
+    lv_obj_set_style_border_width(btn, 1, LV_PART_MAIN);
+    lv_obj_set_style_radius(btn, 6, LV_PART_MAIN);
+    lv_obj_set_style_pad_all(btn, 0, LV_PART_MAIN);
+    lv_obj_add_flag(btn, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_clear_flag(btn, LV_OBJ_FLAG_SCROLLABLE);
+
+    lv_obj_t* lbl = lv_label_create(btn);
+    lv_label_set_text(lbl, btnLabel);
+    lv_obj_set_style_text_color(lbl, TEXT_PRI(), LV_PART_MAIN);
+    lv_obj_set_style_text_font(lbl, &lv_font_montserrat_12, LV_PART_MAIN);
+    lv_obj_align(lbl, LV_ALIGN_CENTER, 0, 0);
+
+    return btn;
+}
+
 // ── create ────────────────────────────────────────────────────────────────────
 
 void CalibrateScreen::create(DisplayContext* ctx) {
+    // Populate BtnCtx array before registering callbacks
+    btnCtx_[0] = {this, 0};
+    btnCtx_[1] = {this, 1};
+    btnCtx_[2] = {this, 2};
+
+    // ── Root screen ───────────────────────────────────────────────────────
     screen_ = lv_obj_create(nullptr);
     lv_obj_set_size(screen_, LCD_W, LCD_H);
     lv_obj_set_style_bg_color(screen_, BG(), LV_PART_MAIN);
@@ -66,16 +166,15 @@ void CalibrateScreen::create(DisplayContext* ctx) {
     lv_obj_set_style_pad_all(header, 0, LV_PART_MAIN);
     lv_obj_clear_flag(header, LV_OBJ_FLAG_SCROLLABLE);
 
-    lv_obj_t* title = lv_label_create(header);
-    lv_label_set_text(title, "CALIBRATE");
-    lv_obj_set_style_text_color(title, TEXT_SEC(), LV_PART_MAIN);
-    lv_obj_set_style_text_font(title, &lv_font_montserrat_10, LV_PART_MAIN);
-    lv_obj_align(title, LV_ALIGN_LEFT_MID, 10, 0);
+    lv_obj_t* headerTitle = lv_label_create(header);
+    lv_label_set_text(headerTitle, "CALIBRATE");
+    lv_obj_set_style_text_color(headerTitle, TEXT_SEC(), LV_PART_MAIN);
+    lv_obj_set_style_text_font(headerTitle, &lv_font_montserrat_10, LV_PART_MAIN);
+    lv_obj_align(headerTitle, LV_ALIGN_LEFT_MID, 10, 0);
 
     // ── Tank capacity row ─────────────────────────────────────────────────
-    static constexpr int CAP_Y = HEADER_H + 6;
     lv_obj_t* capRow = lv_obj_create(screen_);
-    lv_obj_set_size(capRow, LCD_W - 16, 36);
+    lv_obj_set_size(capRow, ROW_W, 36);
     lv_obj_set_pos(capRow, 8, CAP_Y);
     lv_obj_set_style_bg_color(capRow, SURFACE(), LV_PART_MAIN);
     lv_obj_set_style_bg_opa(capRow, OPA_FULL, LV_PART_MAIN);
@@ -102,7 +201,6 @@ void CalibrateScreen::create(DisplayContext* ctx) {
     lv_obj_set_style_pad_all(btnMinus, 0, LV_PART_MAIN);
     lv_obj_add_flag(btnMinus, LV_OBJ_FLAG_CLICKABLE);
     lv_obj_add_event_cb(btnMinus, onCapMinus, LV_EVENT_CLICKED, this);
-
     lv_obj_t* minusLbl = lv_label_create(btnMinus);
     lv_label_set_text(minusLbl, "-");
     lv_obj_set_style_text_color(minusLbl, TEXT_PRI(), LV_PART_MAIN);
@@ -127,102 +225,133 @@ void CalibrateScreen::create(DisplayContext* ctx) {
     lv_obj_set_style_pad_all(btnPlus, 0, LV_PART_MAIN);
     lv_obj_add_flag(btnPlus, LV_OBJ_FLAG_CLICKABLE);
     lv_obj_add_event_cb(btnPlus, onCapPlus, LV_EVENT_CLICKED, this);
-
     lv_obj_t* plusLbl = lv_label_create(btnPlus);
     lv_label_set_text(plusLbl, "+");
     lv_obj_set_style_text_color(plusLbl, TEXT_PRI(), LV_PART_MAIN);
     lv_obj_set_style_text_font(plusLbl, &lv_font_montserrat_16, LV_PART_MAIN);
     lv_obj_align(plusLbl, LV_ALIGN_CENTER, 0, -1);
 
-    // ── Mark Empty button ─────────────────────────────────────────────────
-    static constexpr int EMPTY_Y = CAP_Y + 36 + 8;
-    lv_obj_t* btnEmpty = lv_obj_create(screen_);
-    lv_obj_set_size(btnEmpty, LCD_W - 16, 60);
-    lv_obj_set_pos(btnEmpty, 8, EMPTY_Y);
-    lv_obj_set_style_bg_color(btnEmpty, BLUE(), LV_PART_MAIN);
-    lv_obj_set_style_bg_opa(btnEmpty, OPA_FULL, LV_PART_MAIN);
-    lv_obj_set_style_border_color(btnEmpty, BLUE_BDR(), LV_PART_MAIN);
-    lv_obj_set_style_border_width(btnEmpty, 2, LV_PART_MAIN);
-    lv_obj_set_style_radius(btnEmpty, 8, LV_PART_MAIN);
-    lv_obj_set_style_pad_all(btnEmpty, 0, LV_PART_MAIN);
-    lv_obj_clear_flag(btnEmpty, LV_OBJ_FLAG_SCROLLABLE);
-    lv_obj_add_flag(btnEmpty, LV_OBJ_FLAG_CLICKABLE);
-    lv_obj_add_event_cb(btnEmpty, onMarkEmpty, LV_EVENT_CLICKED, this);
+    // ── Section dividers — hint once per section, plain hyphen ───────────
+    makeDivLabel(screen_, WATER_DIV_Y, "WATER LEVEL - hold 1.5s");
+    makeDivLabel(screen_, TILT_DIV_Y,  "TILT - hold 1.5s");
 
-    lv_obj_t* emptyTitle = lv_label_create(btnEmpty);
-    lv_label_set_text(emptyTitle, "Mark Empty");
-    lv_obj_set_style_text_color(emptyTitle, lv_color_hex(0xe0f2fe), LV_PART_MAIN);
-    lv_obj_set_style_text_font(emptyTitle, &lv_font_montserrat_16, LV_PART_MAIN);
-    lv_obj_align(emptyTitle, LV_ALIGN_CENTER, 0, -8);
+    // ── Combined water panel ──────────────────────────────────────────────
+    //
+    // Internal layout (y positions within panel, pad_all=0):
+    //   y=  5..38  Empty sub-row  (button + cal value)
+    //   y= 38      1 px separator
+    //   y= 39..76  Full sub-row   (button + cal value)
+    //   y= 76      1 px separator
+    //   y= 80..99  Voltage readout
+    //   (WATER_PANEL_H = 104)
+    {
+        lv_obj_t* wp = lv_obj_create(screen_);
+        lv_obj_set_size(wp, ROW_W, WATER_PANEL_H);
+        lv_obj_set_pos(wp, 8, WATER_PANEL_Y);
+        lv_obj_set_style_bg_color(wp, SURFACE(), LV_PART_MAIN);
+        lv_obj_set_style_bg_opa(wp, OPA_FULL, LV_PART_MAIN);
+        lv_obj_set_style_border_color(wp, BORDER(), LV_PART_MAIN);
+        lv_obj_set_style_border_width(wp, 1, LV_PART_MAIN);
+        lv_obj_set_style_radius(wp, 6, LV_PART_MAIN);
+        lv_obj_set_style_pad_all(wp, 0, LV_PART_MAIN);
+        lv_obj_clear_flag(wp, LV_OBJ_FLAG_SCROLLABLE);
 
-    lv_obj_t* emptySub = lv_label_create(btnEmpty);
-    lv_label_set_text(emptySub, "press when tank is empty");
-    lv_obj_set_style_text_color(emptySub, lv_color_hex(0xbae6fd), LV_PART_MAIN);
-    lv_obj_set_style_text_font(emptySub, &lv_font_montserrat_10, LV_PART_MAIN);
-    lv_obj_align(emptySub, LV_ALIGN_CENTER, 0, 12);
+        // ── Empty button (right) + value label (left) ─────────────────────
+        btnEmpty_ = lv_obj_create(wp);
+        lv_obj_set_size(btnEmpty_, BTN_W, BTN_H);
+        lv_obj_set_pos(btnEmpty_, ROW_W - BTN_W - 6, 5);
+        lv_obj_set_style_bg_color(btnEmpty_, BLUE(), LV_PART_MAIN);
+        lv_obj_set_style_bg_opa(btnEmpty_, OPA_FULL, LV_PART_MAIN);
+        lv_obj_set_style_border_color(btnEmpty_, BLUE_BDR(), LV_PART_MAIN);
+        lv_obj_set_style_border_width(btnEmpty_, 1, LV_PART_MAIN);
+        lv_obj_set_style_radius(btnEmpty_, 6, LV_PART_MAIN);
+        lv_obj_set_style_pad_all(btnEmpty_, 0, LV_PART_MAIN);
+        lv_obj_add_flag(btnEmpty_, LV_OBJ_FLAG_CLICKABLE);
+        lv_obj_clear_flag(btnEmpty_, LV_OBJ_FLAG_SCROLLABLE);
+        {
+            lv_obj_t* lbl = lv_label_create(btnEmpty_);
+            lv_label_set_text(lbl, "Empty");
+            lv_obj_set_style_text_color(lbl, TEXT_PRI(), LV_PART_MAIN);
+            lv_obj_set_style_text_font(lbl, &lv_font_montserrat_12, LV_PART_MAIN);
+            lv_obj_align(lbl, LV_ALIGN_CENTER, 0, 0);
+        }
 
-    // ── Mark Full button ──────────────────────────────────────────────────
-    static constexpr int FULL_Y = EMPTY_Y + 60 + 8;
-    lv_obj_t* btnFull = lv_obj_create(screen_);
-    lv_obj_set_size(btnFull, LCD_W - 16, 60);
-    lv_obj_set_pos(btnFull, 8, FULL_Y);
-    lv_obj_set_style_bg_color(btnFull, DARK_GRN(), LV_PART_MAIN);
-    lv_obj_set_style_bg_opa(btnFull, OPA_FULL, LV_PART_MAIN);
-    lv_obj_set_style_border_color(btnFull, GRN_BDR(), LV_PART_MAIN);
-    lv_obj_set_style_border_width(btnFull, 2, LV_PART_MAIN);
-    lv_obj_set_style_radius(btnFull, 8, LV_PART_MAIN);
-    lv_obj_set_style_pad_all(btnFull, 0, LV_PART_MAIN);
-    lv_obj_clear_flag(btnFull, LV_OBJ_FLAG_SCROLLABLE);
-    lv_obj_add_flag(btnFull, LV_OBJ_FLAG_CLICKABLE);
-    lv_obj_add_event_cb(btnFull, onMarkFull, LV_EVENT_CLICKED, this);
+        emptyValLbl_ = lv_label_create(wp);
+        lv_obj_set_style_text_color(emptyValLbl_, TEXT_PRI(), LV_PART_MAIN);
+        lv_obj_set_style_text_font(emptyValLbl_, &lv_font_montserrat_12, LV_PART_MAIN);
+        lv_obj_set_pos(emptyValLbl_, 10, 12);
 
-    lv_obj_t* fullTitle = lv_label_create(btnFull);
-    lv_label_set_text(fullTitle, "Mark Full");
-    lv_obj_set_style_text_color(fullTitle, lv_color_hex(0xdcfce7), LV_PART_MAIN);
-    lv_obj_set_style_text_font(fullTitle, &lv_font_montserrat_16, LV_PART_MAIN);
-    lv_obj_align(fullTitle, LV_ALIGN_CENTER, 0, -8);
+        // ── Separator ─────────────────────────────────────────────────────
+        lv_obj_t* sep1 = lv_obj_create(wp);
+        lv_obj_set_size(sep1, ROW_W - 12, 1);
+        lv_obj_set_pos(sep1, 6, 38);
+        lv_obj_set_style_bg_color(sep1, BORDER(), LV_PART_MAIN);
+        lv_obj_set_style_bg_opa(sep1, OPA_FULL, LV_PART_MAIN);
+        lv_obj_set_style_border_width(sep1, 0, LV_PART_MAIN);
+        lv_obj_set_style_pad_all(sep1, 0, LV_PART_MAIN);
 
-    lv_obj_t* fullSub = lv_label_create(btnFull);
-    lv_label_set_text(fullSub, "press when tank is full");
-    lv_obj_set_style_text_color(fullSub, lv_color_hex(0xbbf7d0), LV_PART_MAIN);
-    lv_obj_set_style_text_font(fullSub, &lv_font_montserrat_10, LV_PART_MAIN);
-    lv_obj_align(fullSub, LV_ALIGN_CENTER, 0, 12);
+        // ── Full button (right) + value label (left) ──────────────────────
+        btnFull_ = lv_obj_create(wp);
+        lv_obj_set_size(btnFull_, BTN_W, BTN_H);
+        lv_obj_set_pos(btnFull_, ROW_W - BTN_W - 6, 44);
+        lv_obj_set_style_bg_color(btnFull_, DARK_GRN(), LV_PART_MAIN);
+        lv_obj_set_style_bg_opa(btnFull_, OPA_FULL, LV_PART_MAIN);
+        lv_obj_set_style_border_color(btnFull_, GRN_BDR(), LV_PART_MAIN);
+        lv_obj_set_style_border_width(btnFull_, 1, LV_PART_MAIN);
+        lv_obj_set_style_radius(btnFull_, 6, LV_PART_MAIN);
+        lv_obj_set_style_pad_all(btnFull_, 0, LV_PART_MAIN);
+        lv_obj_add_flag(btnFull_, LV_OBJ_FLAG_CLICKABLE);
+        lv_obj_clear_flag(btnFull_, LV_OBJ_FLAG_SCROLLABLE);
+        {
+            lv_obj_t* lbl = lv_label_create(btnFull_);
+            lv_label_set_text(lbl, "Full");
+            lv_obj_set_style_text_color(lbl, TEXT_PRI(), LV_PART_MAIN);
+            lv_obj_set_style_text_font(lbl, &lv_font_montserrat_12, LV_PART_MAIN);
+            lv_obj_align(lbl, LV_ALIGN_CENTER, 0, 0);
+        }
 
-    // ── Raw readout panel ─────────────────────────────────────────────────
-    static constexpr int RAW_Y = FULL_Y + 60 + 8;
-    lv_obj_t* rawPanel = lv_obj_create(screen_);
-    lv_obj_set_size(rawPanel, LCD_W - 16, 72);
-    lv_obj_set_pos(rawPanel, 8, RAW_Y);
-    lv_obj_set_style_bg_color(rawPanel, SURFACE(), LV_PART_MAIN);
-    lv_obj_set_style_bg_opa(rawPanel, OPA_FULL, LV_PART_MAIN);
-    lv_obj_set_style_border_color(rawPanel, BORDER(), LV_PART_MAIN);
-    lv_obj_set_style_border_width(rawPanel, 1, LV_PART_MAIN);
-    lv_obj_set_style_radius(rawPanel, 6, LV_PART_MAIN);
-    lv_obj_set_style_pad_left(rawPanel, 10, LV_PART_MAIN);
-    lv_obj_set_style_pad_top(rawPanel, 6, LV_PART_MAIN);
-    lv_obj_clear_flag(rawPanel, LV_OBJ_FLAG_SCROLLABLE);
+        fullValLbl_ = lv_label_create(wp);
+        lv_obj_set_style_text_color(fullValLbl_, TEXT_PRI(), LV_PART_MAIN);
+        lv_obj_set_style_text_font(fullValLbl_, &lv_font_montserrat_12, LV_PART_MAIN);
+        lv_obj_set_pos(fullValLbl_, 10, 51);
 
-    // Helper lambda-like macro for raw rows
-    auto makeRawRow = [&](lv_obj_t* parent, int yOff, const char* key, lv_obj_t** valOut) {
-        lv_obj_t* keyLbl = lv_label_create(parent);
-        lv_label_set_text(keyLbl, key);
-        lv_obj_set_style_text_color(keyLbl, TEXT_MUT(), LV_PART_MAIN);
-        lv_obj_set_style_text_font(keyLbl, &lv_font_montserrat_10, LV_PART_MAIN);
-        lv_obj_set_pos(keyLbl, 0, yOff);
-        lv_obj_set_width(keyLbl, 90);
+        // ── Separator ─────────────────────────────────────────────────────
+        lv_obj_t* sep2 = lv_obj_create(wp);
+        lv_obj_set_size(sep2, ROW_W - 12, 1);
+        lv_obj_set_pos(sep2, 6, 77);
+        lv_obj_set_style_bg_color(sep2, BORDER(), LV_PART_MAIN);
+        lv_obj_set_style_bg_opa(sep2, OPA_FULL, LV_PART_MAIN);
+        lv_obj_set_style_border_width(sep2, 0, LV_PART_MAIN);
+        lv_obj_set_style_pad_all(sep2, 0, LV_PART_MAIN);
 
-        *valOut = lv_label_create(parent);
-        lv_label_set_text(*valOut, "-");
-        lv_obj_set_style_text_color(*valOut, TEXT_SEC(), LV_PART_MAIN);
-        lv_obj_set_style_text_font(*valOut, &lv_font_montserrat_10, LV_PART_MAIN);
-        lv_obj_align_to(*valOut, keyLbl, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
-    };
+        // ── Voltage readout ───────────────────────────────────────────────
+        lv_obj_t* voltKey = lv_label_create(wp);
+        lv_label_set_text(voltKey, "Voltage");
+        lv_obj_set_style_text_color(voltKey, TEXT_MUT(), LV_PART_MAIN);
+        lv_obj_set_style_text_font(voltKey, &lv_font_montserrat_10, LV_PART_MAIN);
+        lv_obj_set_pos(voltKey, 10, 85);
 
-    makeRawRow(rawPanel,  0, "Raw level",       &rawAdc_);
-    makeRawRow(rawPanel, 16, "Computed level", &computedM_);
-    makeRawRow(rawPanel, 32, "Cal points",     &calPoints_);
-    // rawVolts_ is unused as a separate label — folded into rawAdc_
-    rawVolts_ = nullptr;
+        rawVolts_ = lv_label_create(wp);
+        lv_label_set_text(rawVolts_, "-");
+        lv_obj_set_style_text_color(rawVolts_, TEXT_SEC(), LV_PART_MAIN);
+        lv_obj_set_style_text_font(rawVolts_, &lv_font_montserrat_10, LV_PART_MAIN);
+        lv_obj_align_to(rawVolts_, voltKey, LV_ALIGN_OUT_RIGHT_MID, 4, 0);
+    }
+
+    // ── Zero (tilt) row ───────────────────────────────────────────────────
+    btnFlat_ = makeCalRow(screen_, FLAT_Y,
+                          "--", TEAL(), TEAL_BDR(), "Zero", &tiltLabel_);
+
+    // Register long-press callbacks on all three buttons
+    lv_obj_t* btns[3] = {btnEmpty_, btnFull_, btnFlat_};
+    for (int i = 0; i < 3; ++i) {
+        lv_obj_add_event_cb(btns[i], onBtnPressed,  LV_EVENT_PRESSED,    &btnCtx_[i]);
+        lv_obj_add_event_cb(btns[i], onBtnReleased, LV_EVENT_RELEASED,   &btnCtx_[i]);
+        lv_obj_add_event_cb(btns[i], onBtnReleased, LV_EVENT_PRESS_LOST, &btnCtx_[i]);
+    }
+
+    // Seed value labels from NVS-loaded calibration points
+    updateCalDisplay();
 
     // ── Nav button ────────────────────────────────────────────────────────
     lv_obj_t* nav = lv_obj_create(screen_);
@@ -257,47 +386,81 @@ void CalibrateScreen::show() {
 void CalibrateScreen::updateRaw(const WaterData& data) {
     lastVolts_ = data.rawVolts;
 
-    // Display-side IIR: seed on first call, blend thereafter
     if (dispVolts_ < 0.0f) {
         dispVolts_ = data.rawVolts;
     } else {
         dispVolts_ = DISP_ALPHA * dispVolts_ + (1.0f - DISP_ALPHA) * data.rawVolts;
     }
 
-    char buf[48];
-
-    snprintf(buf, sizeof(buf), "%.2fV", dispVolts_);
-    lv_label_set_text(rawAdc_, buf);
-
-    snprintf(buf, sizeof(buf), "%.0fL", data.litres);
-    lv_label_set_text(computedM_, buf);
-
-    snprintf(buf, sizeof(buf), "%.2fV / %.2fV", calVEmpty_, calVFull_);
-    lv_label_set_text(calPoints_, buf);
-}
-
-// ── Button callbacks ──────────────────────────────────────────────────────────
-
-void CalibrateScreen::onMarkEmpty(lv_event_t* e) {
-    auto* self = static_cast<CalibrateScreen*>(lv_event_get_user_data(e));
-    self->calVEmpty_ = self->lastVolts_;
-    ESP_LOGI(TAG, "Calibration: empty = %.3f V", self->calVEmpty_);
-    self->saveCalibration();
-    // Refresh cal points display
     char buf[32];
-    snprintf(buf, sizeof(buf), "%.2fV / %.2fV", self->calVEmpty_, self->calVFull_);
-    lv_label_set_text(self->calPoints_, buf);
+    snprintf(buf, sizeof(buf), "%.2fV  (%.0fL)", dispVolts_, data.litres);
+    lv_label_set_text(rawVolts_, buf);
 }
 
-void CalibrateScreen::onMarkFull(lv_event_t* e) {
-    auto* self = static_cast<CalibrateScreen*>(lv_event_get_user_data(e));
-    self->calVFull_ = self->lastVolts_;
-    ESP_LOGI(TAG, "Calibration: full = %.3f V", self->calVFull_);
-    self->saveCalibration();
-    char buf[32];
-    snprintf(buf, sizeof(buf), "%.2fV / %.2fV", self->calVEmpty_, self->calVFull_);
-    lv_label_set_text(self->calPoints_, buf);
+// ── updateLevel ───────────────────────────────────────────────────────────────
+
+void CalibrateScreen::updateLevel(const LevelData& data) {
+    if (!tiltLabel_) return;
+    char buf[24];
+    snprintf(buf, sizeof(buf), "X:%.1f\xc2\xb0  Y:%.1f\xc2\xb0", data.tiltX, data.tiltY);
+    lv_label_set_text(tiltLabel_, buf);
 }
+
+// ── Long-press callbacks ──────────────────────────────────────────────────────
+
+void CalibrateScreen::onBtnPressed(lv_event_t* e) {
+    auto* ctx  = static_cast<BtnCtx*>(lv_event_get_user_data(e));
+    auto* self = ctx->self;
+    self->pressStart_ = lv_tick_get();
+    self->pressedId_  = ctx->id;
+
+    // Dim slightly to indicate "armed; keep holding"
+    lv_obj_t* btns[3] = {self->btnEmpty_, self->btnFull_, self->btnFlat_};
+    lv_obj_set_style_bg_opa(btns[ctx->id], LV_OPA_60, LV_PART_MAIN);
+}
+
+void CalibrateScreen::onBtnReleased(lv_event_t* e) {
+    auto* ctx  = static_cast<BtnCtx*>(lv_event_get_user_data(e));
+    auto* self = ctx->self;
+
+    // Restore opacity regardless of whether the hold was long enough
+    lv_obj_t* btns[3] = {self->btnEmpty_, self->btnFull_, self->btnFlat_};
+    lv_obj_set_style_bg_opa(btns[ctx->id], OPA_FULL, LV_PART_MAIN);
+
+    if (self->pressedId_ != ctx->id) return;
+    self->pressedId_ = -1;
+
+    if (lv_tick_elaps(self->pressStart_) >= LONG_PRESS_MS) {
+        self->handleLongPress(ctx->id);
+    }
+}
+
+void CalibrateScreen::handleLongPress(int id) {
+    switch (id) {
+        case 0:  // Empty
+            calVEmpty_ = lastVolts_;
+            saveCalibration();
+            updateCalDisplay();
+            log.info("Calibration: empty = %.3f V", calVEmpty_);
+            break;
+        case 1:  // Full
+            calVFull_ = lastVolts_;
+            saveCalibration();
+            updateCalDisplay();
+            log.info("Calibration: full = %.3f V", calVFull_);
+            break;
+        case 2:  // Flat
+            if (onFlatCb_) {
+                log.info("Tilt flat calibration triggered");
+                onFlatCb_();
+            } else {
+                log.warn("Flat pressed but no callback registered");
+            }
+            break;
+    }
+}
+
+// ── Capacity callbacks ────────────────────────────────────────────────────────
 
 void CalibrateScreen::onCapMinus(lv_event_t* e) {
     auto* self = static_cast<CalibrateScreen*>(lv_event_get_user_data(e));
@@ -317,15 +480,26 @@ void CalibrateScreen::onCapPlus(lv_event_t* e) {
 
 // ── Private helpers ───────────────────────────────────────────────────────────
 
+void CalibrateScreen::updateCalDisplay() {
+    char buf[16];
+    if (emptyValLbl_) {
+        snprintf(buf, sizeof(buf), "%.2fV", calVEmpty_);
+        lv_label_set_text(emptyValLbl_, buf);
+    }
+    if (fullValLbl_) {
+        snprintf(buf, sizeof(buf), "%.2fV", calVFull_);
+        lv_label_set_text(fullValLbl_, buf);
+    }
+}
+
 void CalibrateScreen::saveCalibration() {
     nvs_handle_t h;
     if (nvs_open(NVS_NS, NVS_READWRITE, &h) != ESP_OK) {
-        ESP_LOGW(TAG, "NVS open failed");
+        log.warn("NVS open failed");
         return;
     }
     nvs_set_u32(h, "tank_litres", capacityL_);
 
-    // Store floats as bit-cast uint32
     uint32_t bits;
     bits = *reinterpret_cast<uint32_t*>(&calVEmpty_);
     nvs_set_u32(h, "cal_v_empty_b", bits);
@@ -334,7 +508,7 @@ void CalibrateScreen::saveCalibration() {
 
     nvs_commit(h);
     nvs_close(h);
-    ESP_LOGI(TAG, "Saved: cap=%luL empty=%.2fV full=%.2fV",
+    log.info("Saved: cap=%luL  empty=%.2fV  full=%.2fV",
              (unsigned long)capacityL_, calVEmpty_, calVFull_);
 }
 

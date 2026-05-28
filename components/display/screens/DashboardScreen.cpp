@@ -2,12 +2,33 @@
 #include "Theme.hpp"
 #include "DisplayContext.hpp"
 
-#include <cstdio>
+#include <algorithm>
 #include <cmath>
+#include <cstdio>
+#include <cstring>
 
 namespace display {
 
 using namespace theme;
+
+// ── Layout constants ──────────────────────────────────────────────────────────
+
+// Water section
+static constexpr int WATER_Y    = HEADER_H;        // 28 — top of water section
+static constexpr int WATER_BAR_H = 8;
+
+// Level widget
+static constexpr int LEVEL_Y        = 90;   // top of crosshair container
+static constexpr int LEVEL_SIZE     = 96;   // crosshair container width & height
+static constexpr int LEVEL_X        = (LCD_W - LEVEL_SIZE) / 2;  // centred = 72
+static constexpr int LEVEL_LABEL_Y  = LEVEL_Y + LEVEL_SIZE + 4;  // 180
+static constexpr int DOT_SIZE       = 10;
+static constexpr int DOT_R          = DOT_SIZE / 2;               // 5
+static constexpr float MAX_DISP_DEG = 5.f;  // tilt at which dot reaches canvas edge
+
+// Battery section
+static constexpr int DIV_Y   = 208;
+static constexpr int BATT_Y  = DIV_Y + 8;  // 216
 
 // ── Nav button callback ───────────────────────────────────────────────────────
 
@@ -44,7 +65,6 @@ void DashboardScreen::create(DisplayContext* ctx) {
     lv_obj_set_style_text_font(title, &lv_font_montserrat_10, LV_PART_MAIN);
     lv_obj_align(title, LV_ALIGN_LEFT_MID, 10, 0);
 
-    // Status dots (Wi-Fi and MQTT) — 6×6 circles, right-aligned
     dotWifi_ = lv_obj_create(header);
     lv_obj_set_size(dotWifi_, 6, 6);
     lv_obj_set_style_radius(dotWifi_, LV_RADIUS_CIRCLE, LV_PART_MAIN);
@@ -61,81 +81,112 @@ void DashboardScreen::create(DisplayContext* ctx) {
     lv_obj_set_style_border_width(dotMqtt_, 0, LV_PART_MAIN);
     lv_obj_align(dotMqtt_, LV_ALIGN_RIGHT_MID, -10, 0);
 
-    // ── Warning banner (hidden initially) ────────────────────────────────
-    banner_ = lv_obj_create(screen_);
-    lv_obj_set_size(banner_, LCD_W, BANNER_H);
-    lv_obj_set_pos(banner_, 0, HEADER_H);
-    lv_obj_set_style_bg_color(banner_, lv_color_hex(0x451a03), LV_PART_MAIN);
-    lv_obj_set_style_bg_opa(banner_, OPA_FULL, LV_PART_MAIN);
-    lv_obj_set_style_border_width(banner_, 0, LV_PART_MAIN);
-    lv_obj_set_style_radius(banner_, 0, LV_PART_MAIN);
-    lv_obj_set_style_pad_all(banner_, 0, LV_PART_MAIN);
-    lv_obj_clear_flag(banner_, LV_OBJ_FLAG_SCROLLABLE);
-    lv_obj_add_flag(banner_, LV_OBJ_FLAG_HIDDEN);  // hidden by default
+    // ── Water section ─────────────────────────────────────────────────────
+    // Title
+    lv_obj_t* waterTitle = lv_label_create(screen_);
+    lv_label_set_text(waterTitle, "WATER");
+    lv_obj_set_style_text_color(waterTitle, TEXT_SEC(), LV_PART_MAIN);
+    lv_obj_set_style_text_font(waterTitle, &lv_font_montserrat_10, LV_PART_MAIN);
+    lv_obj_set_pos(waterTitle, 12, WATER_Y + 4);
 
-    bannerLabel_ = lv_label_create(banner_);
-    lv_label_set_text(bannerLabel_, "");
-    lv_obj_set_style_text_color(bannerLabel_, AMBER(), LV_PART_MAIN);
-    lv_obj_set_style_text_font(bannerLabel_, &lv_font_montserrat_10, LV_PART_MAIN);
-    lv_obj_align(bannerLabel_, LV_ALIGN_CENTER, 0, 0);
+    // Alarm background band — full-width, sits behind pct + litres labels.
+    // Created before the labels so LVGL draws it underneath them.
+    // Normally transparent; turns amber under alarm conditions.
+    waterAlarmRow_ = lv_obj_create(screen_);
+    lv_obj_set_size(waterAlarmRow_, LCD_W, 32);
+    lv_obj_set_pos(waterAlarmRow_, 0, WATER_Y + 14);
+    lv_obj_set_style_bg_opa(waterAlarmRow_, OPA_NONE, LV_PART_MAIN);
+    lv_obj_set_style_border_width(waterAlarmRow_, 0, LV_PART_MAIN);
+    lv_obj_set_style_radius(waterAlarmRow_, 0, LV_PART_MAIN);
+    lv_obj_set_style_pad_all(waterAlarmRow_, 0, LV_PART_MAIN);
+    lv_obj_clear_flag(waterAlarmRow_, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_clear_flag(waterAlarmRow_, LV_OBJ_FLAG_CLICKABLE);
 
-    // ── Water arc gauge ───────────────────────────────────────────────────
-    // The arc is centred in the water section (y 28–189, height 162)
-    // Water section spans y=48 (below banner) to y=190 (divider) = 142 px.
-    // Arc widget at radius 48 is 120 px tall → 11 px margin top & bottom → centre y=119.
-    static constexpr int ARC_RADIUS   = 48;
-    static constexpr int ARC_WIDTH    = 10;
-    static constexpr int ARC_SIZE     = ARC_RADIUS * 2 + ARC_WIDTH * 2 + 4;  // 120
-    static constexpr int ARC_Y_TOP    = HEADER_H + BANNER_H + 11;            // 59
-    static constexpr int ARC_Y_CENTER = ARC_Y_TOP + ARC_SIZE / 2;            // 119
+    // Percentage label — left side of value row
+    waterPct_ = lv_label_create(screen_);
+    lv_label_set_text(waterPct_, "--%");
+    lv_obj_set_style_text_color(waterPct_, TEXT_PRI(), LV_PART_MAIN);
+    lv_obj_set_style_text_font(waterPct_, &lv_font_montserrat_22, LV_PART_MAIN);
+    lv_obj_set_pos(waterPct_, 12, WATER_Y + 18);
 
-    arc_ = lv_arc_create(screen_);
-    lv_obj_set_size(arc_, ARC_SIZE, ARC_SIZE);
-    lv_obj_align(arc_, LV_ALIGN_TOP_MID, 0, ARC_Y_TOP);
+    // Litres label — right-aligned on same row
+    waterLitres_ = lv_label_create(screen_);
+    lv_label_set_text(waterLitres_, "-- L");
+    lv_obj_set_style_text_color(waterLitres_, CYAN(), LV_PART_MAIN);
+    lv_obj_set_style_text_font(waterLitres_, &lv_font_montserrat_14, LV_PART_MAIN);
+    lv_obj_align(waterLitres_, LV_ALIGN_TOP_RIGHT, -12, WATER_Y + 24);
 
-    // Arc spans 135° → 405° (270° sweep, gap at bottom)
-    lv_arc_set_bg_angles(arc_, 135, 45);
-    lv_arc_set_angles(arc_, 135, 45);
-    lv_arc_set_range(arc_, 0, 100);
-    lv_arc_set_value(arc_, 0);
-    lv_arc_set_mode(arc_, LV_ARC_MODE_NORMAL);
+    // Bar
+    waterBar_ = lv_bar_create(screen_);
+    lv_obj_set_size(waterBar_, LCD_W - 24, WATER_BAR_H);
+    lv_obj_set_pos(waterBar_, 12, WATER_Y + 50);
+    lv_bar_set_range(waterBar_, 0, 100);
+    lv_bar_set_value(waterBar_, 0, LV_ANIM_OFF);
+    lv_obj_set_style_bg_color(waterBar_, TRACK(), LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(waterBar_, OPA_FULL, LV_PART_MAIN);
+    lv_obj_set_style_bg_color(waterBar_, CYAN(), LV_PART_INDICATOR);
+    lv_obj_set_style_bg_opa(waterBar_, OPA_FULL, LV_PART_INDICATOR);
+    lv_obj_set_style_radius(waterBar_, 4, LV_PART_MAIN);
+    lv_obj_set_style_radius(waterBar_, 4, LV_PART_INDICATOR);
+    lv_obj_set_style_border_width(waterBar_, 0, LV_PART_MAIN);
 
-    // Remove the knob and click interaction
-    lv_obj_remove_style(arc_, nullptr, LV_PART_KNOB);
-    lv_obj_clear_flag(arc_, LV_OBJ_FLAG_CLICKABLE);
+    // ── Level widget ──────────────────────────────────────────────────────
+    // Container — dark background, fixed position, no scroll, no layout
+    levelContainer_ = lv_obj_create(screen_);
+    lv_obj_set_size(levelContainer_, LEVEL_SIZE, LEVEL_SIZE);
+    lv_obj_set_pos(levelContainer_, LEVEL_X, LEVEL_Y);
+    lv_obj_set_style_bg_color(levelContainer_, SURFACE(), LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(levelContainer_, OPA_FULL, LV_PART_MAIN);
+    lv_obj_set_style_border_color(levelContainer_, BORDER(), LV_PART_MAIN);
+    lv_obj_set_style_border_width(levelContainer_, 1, LV_PART_MAIN);
+    lv_obj_set_style_radius(levelContainer_, 4, LV_PART_MAIN);
+    lv_obj_set_style_pad_all(levelContainer_, 0, LV_PART_MAIN);
+    lv_obj_clear_flag(levelContainer_, LV_OBJ_FLAG_SCROLLABLE);
 
-    lv_obj_set_style_arc_color(arc_, TRACK(), LV_PART_MAIN);      // background track
-    lv_obj_set_style_arc_width(arc_, ARC_WIDTH, LV_PART_MAIN);
-    lv_obj_set_style_arc_color(arc_, CYAN(), LV_PART_INDICATOR);  // value indicator
-    lv_obj_set_style_arc_width(arc_, ARC_WIDTH, LV_PART_INDICATOR);
-    lv_obj_set_style_arc_rounded(arc_, true, LV_PART_MAIN);
-    lv_obj_set_style_arc_rounded(arc_, true, LV_PART_INDICATOR);
-    lv_obj_set_style_bg_opa(arc_, OPA_NONE, LV_PART_MAIN);
-    lv_obj_set_style_border_width(arc_, 0, LV_PART_MAIN);
+    // Horizontal crosshair line
+    lv_obj_t* lineH = lv_obj_create(levelContainer_);
+    lv_obj_set_size(lineH, LEVEL_SIZE, 1);
+    lv_obj_set_style_bg_color(lineH, BORDER(), LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(lineH, OPA_FULL, LV_PART_MAIN);
+    lv_obj_set_style_border_width(lineH, 0, LV_PART_MAIN);
+    lv_obj_set_style_radius(lineH, 0, LV_PART_MAIN);
+    lv_obj_add_flag(lineH, LV_OBJ_FLAG_IGNORE_LAYOUT);
+    lv_obj_set_pos(lineH, 0, LEVEL_SIZE / 2);
 
-    // Percentage label — large, centred over arc
-    arcPct_ = lv_label_create(screen_);
-    lv_label_set_text(arcPct_, "--%");
-    lv_obj_set_style_text_color(arcPct_, TEXT_PRI(), LV_PART_MAIN);
-    lv_obj_set_style_text_font(arcPct_, &lv_font_montserrat_28, LV_PART_MAIN);
-    lv_obj_align(arcPct_, LV_ALIGN_TOP_MID, 0, ARC_Y_CENTER - 22);
+    // Vertical crosshair line
+    lv_obj_t* lineV = lv_obj_create(levelContainer_);
+    lv_obj_set_size(lineV, 1, LEVEL_SIZE);
+    lv_obj_set_style_bg_color(lineV, BORDER(), LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(lineV, OPA_FULL, LV_PART_MAIN);
+    lv_obj_set_style_border_width(lineV, 0, LV_PART_MAIN);
+    lv_obj_set_style_radius(lineV, 0, LV_PART_MAIN);
+    lv_obj_add_flag(lineV, LV_OBJ_FLAG_IGNORE_LAYOUT);
+    lv_obj_set_pos(lineV, LEVEL_SIZE / 2, 0);
 
-    // Litres label — below percentage
-    arcLitres_ = lv_label_create(screen_);
-    lv_label_set_text(arcLitres_, "--L");
-    lv_obj_set_style_text_color(arcLitres_, CYAN(), LV_PART_MAIN);
-    lv_obj_set_style_text_font(arcLitres_, &lv_font_montserrat_14, LV_PART_MAIN);
-    lv_obj_align(arcLitres_, LV_ALIGN_TOP_MID, 0, ARC_Y_CENTER + 8);
+    // Dot — circular, starts at centre
+    levelDot_ = lv_obj_create(levelContainer_);
+    lv_obj_set_size(levelDot_, DOT_SIZE, DOT_SIZE);
+    lv_obj_set_style_radius(levelDot_, LV_RADIUS_CIRCLE, LV_PART_MAIN);
+    lv_obj_set_style_bg_color(levelDot_, GREEN(), LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(levelDot_, OPA_FULL, LV_PART_MAIN);
+    lv_obj_set_style_border_width(levelDot_, 0, LV_PART_MAIN);
+    lv_obj_add_flag(levelDot_, LV_OBJ_FLAG_IGNORE_LAYOUT);
+    lv_obj_set_pos(levelDot_, LEVEL_SIZE / 2 - DOT_R, LEVEL_SIZE / 2 - DOT_R);
 
-    // "water" unit hint
-    lv_obj_t* waterUnit = lv_label_create(screen_);
-    lv_label_set_text(waterUnit, "water");
-    lv_obj_set_style_text_color(waterUnit, TEXT_MUT(), LV_PART_MAIN);
-    lv_obj_set_style_text_font(waterUnit, &lv_font_montserrat_10, LV_PART_MAIN);
-    lv_obj_align(waterUnit, LV_ALIGN_TOP_MID, 0, ARC_Y_CENTER + 26);
+    // Degree labels — below the container, left and right
+    levelLabelX_ = lv_label_create(screen_);
+    lv_label_set_text(levelLabelX_, "0.0\xc2\xb0");  // UTF-8 degree symbol
+    lv_obj_set_style_text_color(levelLabelX_, GREEN(), LV_PART_MAIN);
+    lv_obj_set_style_text_font(levelLabelX_, &lv_font_montserrat_12, LV_PART_MAIN);
+    lv_obj_set_pos(levelLabelX_, LEVEL_X, LEVEL_LABEL_Y);
+
+    levelLabelY_ = lv_label_create(screen_);
+    lv_label_set_text(levelLabelY_, "0.0\xc2\xb0");
+    lv_obj_set_style_text_color(levelLabelY_, GREEN(), LV_PART_MAIN);
+    lv_obj_set_style_text_font(levelLabelY_, &lv_font_montserrat_12, LV_PART_MAIN);
+    lv_obj_align(levelLabelY_, LV_ALIGN_TOP_RIGHT, -(LCD_W - LEVEL_X - LEVEL_SIZE), LEVEL_LABEL_Y);
 
     // ── Divider ───────────────────────────────────────────────────────────
-    static constexpr int DIV_Y = 190;
     lv_obj_t* div = lv_obj_create(screen_);
     lv_obj_set_size(div, LCD_W - 32, 1);
     lv_obj_set_pos(div, 16, DIV_Y);
@@ -145,26 +196,32 @@ void DashboardScreen::create(DisplayContext* ctx) {
     lv_obj_set_style_radius(div, 0, LV_PART_MAIN);
 
     // ── Battery section ───────────────────────────────────────────────────
-    static constexpr int BATT_Y = DIV_Y + 8;  // 198
+    // Alarm background band — behind SOC + voltage row.
+    battAlarmRow_ = lv_obj_create(screen_);
+    lv_obj_set_size(battAlarmRow_, LCD_W, 32);
+    lv_obj_set_pos(battAlarmRow_, 0, BATT_Y - 2);
+    lv_obj_set_style_bg_opa(battAlarmRow_, OPA_NONE, LV_PART_MAIN);
+    lv_obj_set_style_border_width(battAlarmRow_, 0, LV_PART_MAIN);
+    lv_obj_set_style_radius(battAlarmRow_, 0, LV_PART_MAIN);
+    lv_obj_set_style_pad_all(battAlarmRow_, 0, LV_PART_MAIN);
+    lv_obj_clear_flag(battAlarmRow_, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_clear_flag(battAlarmRow_, LV_OBJ_FLAG_CLICKABLE);
 
-    // SOC percentage — large text
     battSoc_ = lv_label_create(screen_);
     lv_label_set_text(battSoc_, "--%");
     lv_obj_set_style_text_color(battSoc_, TEXT_PRI(), LV_PART_MAIN);
     lv_obj_set_style_text_font(battSoc_, &lv_font_montserrat_22, LV_PART_MAIN);
     lv_obj_set_pos(battSoc_, 36, BATT_Y);
 
-    // Voltage / current — right-aligned on same row
     battVolts_ = lv_label_create(screen_);
     lv_label_set_text(battVolts_, "--.- V");
     lv_obj_set_style_text_color(battVolts_, TEXT_MUT(), LV_PART_MAIN);
     lv_obj_set_style_text_font(battVolts_, &lv_font_montserrat_12, LV_PART_MAIN);
     lv_obj_align(battVolts_, LV_ALIGN_TOP_RIGHT, -12, BATT_Y + 5);
 
-    // Battery bar
     battBar_ = lv_bar_create(screen_);
     lv_obj_set_size(battBar_, LCD_W - 24, 9);
-    lv_obj_set_pos(battBar_, 12, BATT_Y + 30);
+    lv_obj_set_pos(battBar_, 12, BATT_Y + 34);
     lv_bar_set_range(battBar_, 0, 100);
     lv_bar_set_value(battBar_, 0, LV_ANIM_OFF);
     lv_obj_set_style_bg_color(battBar_, TRACK(), LV_PART_MAIN);
@@ -174,15 +231,6 @@ void DashboardScreen::create(DisplayContext* ctx) {
     lv_obj_set_style_radius(battBar_, 4, LV_PART_MAIN);
     lv_obj_set_style_radius(battBar_, 4, LV_PART_INDICATOR);
     lv_obj_set_style_border_width(battBar_, 0, LV_PART_MAIN);
-
-    // Status / stats row (solar, load, net) or alarm text
-    battStatus_ = lv_label_create(screen_);
-    lv_label_set_text(battStatus_, "");
-    lv_obj_set_style_text_color(battStatus_, TEXT_MUT(), LV_PART_MAIN);
-    lv_obj_set_style_text_font(battStatus_, &lv_font_montserrat_10, LV_PART_MAIN);
-    lv_obj_set_pos(battStatus_, 12, BATT_Y + 46);
-    lv_obj_set_width(battStatus_, LCD_W - 24);
-    lv_label_set_long_mode(battStatus_, LV_LABEL_LONG_CLIP);
 
     // ── Nav button ────────────────────────────────────────────────────────
     makeNavButton(screen_, ctx);
@@ -199,13 +247,13 @@ void DashboardScreen::show() {
 void DashboardScreen::updateWater(const WaterData& data) {
     char buf[32];
 
-    lv_arc_set_value(arc_, static_cast<int>(data.pct));
+    lv_bar_set_value(waterBar_, static_cast<int>(data.pct), LV_ANIM_OFF);
 
     snprintf(buf, sizeof(buf), "%.0f%%", data.pct);
-    lv_label_set_text(arcPct_, buf);
+    lv_label_set_text(waterPct_, buf);
 
-    snprintf(buf, sizeof(buf), "%.0fL", data.litres);
-    lv_label_set_text(arcLitres_, buf);
+    snprintf(buf, sizeof(buf), "%.0f L", data.litres);
+    lv_label_set_text(waterLitres_, buf);
 
     applyWaterAlarm(data.pct);
 }
@@ -223,12 +271,48 @@ void DashboardScreen::updateBattery(const BatteryData& data) {
     snprintf(buf, sizeof(buf), "%.1f V  %.1f A", data.voltage, data.current);
     lv_label_set_text(battVolts_, buf);
 
-    float net = data.solarW - data.loadW;
-    snprintf(buf, sizeof(buf), "Solar %.0fW   Load %.0fW   Net %+.0fW",
-             data.solarW, data.loadW, net);
-    lv_label_set_text(battStatus_, buf);
-
     applyBatteryAlarm(data.soc);
+}
+
+// ── updateLevel ───────────────────────────────────────────────────────────────
+
+void DashboardScreen::updateLevel(const LevelData& data) {
+    // ── Dot position ──────────────────────────────────────────────────────
+    static constexpr int HALF    = LEVEL_SIZE / 2;           // 48
+    static constexpr int MAX_PX  = HALF - DOT_R;             // 43
+
+    int dx = static_cast<int>(data.tiltX / MAX_DISP_DEG * MAX_PX);
+    int dy = static_cast<int>(data.tiltY / MAX_DISP_DEG * MAX_PX);
+    dx = std::clamp(dx, -MAX_PX, MAX_PX);
+    dy = std::clamp(dy, -MAX_PX, MAX_PX);
+
+    lv_obj_set_pos(levelDot_, HALF + dx - DOT_R, HALF + dy - DOT_R);
+
+    // ── Colour based on worst-axis severity ───────────────────────────────
+    float worst = std::max(fabsf(data.tiltX), fabsf(data.tiltY));
+    lv_color_t col;
+    if (worst >= LEVEL_ERR_DEG)       col = RED();
+    else if (worst >= LEVEL_WARN_DEG) col = AMBER();
+    else                               col = GREEN();
+
+    lv_obj_set_style_bg_color(levelDot_, col, LV_PART_MAIN);
+
+    // ── Degree labels — only redraw when formatted text changes (anti-jitter)
+    // Degree symbol: UTF-8 0xC2 0xB0
+    char bufX[10], bufY[10];
+    snprintf(bufX, sizeof(bufX), "%.1f\xc2\xb0", data.tiltX);
+    snprintf(bufY, sizeof(bufY), "%.1f\xc2\xb0", data.tiltY);
+
+    if (strcmp(bufX, prevLabelX_) != 0) {
+        lv_label_set_text(levelLabelX_, bufX);
+        lv_obj_set_style_text_color(levelLabelX_, col, LV_PART_MAIN);
+        strncpy(prevLabelX_, bufX, sizeof(prevLabelX_) - 1);
+    }
+    if (strcmp(bufY, prevLabelY_) != 0) {
+        lv_label_set_text(levelLabelY_, bufY);
+        lv_obj_set_style_text_color(levelLabelY_, col, LV_PART_MAIN);
+        strncpy(prevLabelY_, bufY, sizeof(prevLabelY_) - 1);
+    }
 }
 
 // ── setWifiOk / setMqttOk ─────────────────────────────────────────────────────
@@ -244,51 +328,42 @@ void DashboardScreen::setMqttOk(bool ok) {
 // ── Private: alarm state ──────────────────────────────────────────────────────
 
 void DashboardScreen::applyWaterAlarm(float pct) {
-    if (pct <= ALARM_LOW_PCT) {
-        // Near empty — amber arc + text + banner
-        lv_obj_set_style_arc_color(arc_, AMBER(), LV_PART_INDICATOR);
-        lv_obj_set_style_text_color(arcPct_,    AMBER(), LV_PART_MAIN);
-        lv_obj_set_style_text_color(arcLitres_, AMBER(), LV_PART_MAIN);
-        lv_label_set_text(bannerLabel_, "WATER LOW");
-        lv_obj_clear_flag(banner_, LV_OBJ_FLAG_HIDDEN);
-    } else if (pct >= ALARM_HIGH_PCT) {
-        // Near full — amber arc + text + banner
-        lv_obj_set_style_arc_color(arc_, AMBER(), LV_PART_INDICATOR);
-        lv_obj_set_style_text_color(arcPct_,    AMBER(), LV_PART_MAIN);
-        lv_obj_set_style_text_color(arcLitres_, AMBER(), LV_PART_MAIN);
-        lv_label_set_text(bannerLabel_, "TANK NEARLY FULL");
-        lv_obj_clear_flag(banner_, LV_OBJ_FLAG_HIDDEN);
+    if (pct <= ALARM_LOW_PCT || pct >= ALARM_HIGH_PCT) {
+        // Alarm — amber band behind value row, black text, amber bar
+        lv_obj_set_style_bg_color(waterAlarmRow_, AMBER(), LV_PART_MAIN);
+        lv_obj_set_style_bg_opa(waterAlarmRow_, OPA_FULL, LV_PART_MAIN);
+        lv_obj_set_style_text_color(waterPct_,    BLACK(), LV_PART_MAIN);
+        lv_obj_set_style_text_color(waterLitres_, BLACK(), LV_PART_MAIN);
+        lv_obj_set_style_bg_color(waterBar_, AMBER(), LV_PART_INDICATOR);
     } else {
-        // Normal — cyan arc
-        lv_obj_set_style_arc_color(arc_, CYAN(), LV_PART_INDICATOR);
-        lv_obj_set_style_text_color(arcPct_,    TEXT_PRI(), LV_PART_MAIN);
-        lv_obj_set_style_text_color(arcLitres_, CYAN(), LV_PART_MAIN);
-        lv_obj_add_flag(banner_, LV_OBJ_FLAG_HIDDEN);
+        // Normal — transparent band, default text colours, cyan bar
+        lv_obj_set_style_bg_opa(waterAlarmRow_, OPA_NONE, LV_PART_MAIN);
+        lv_obj_set_style_text_color(waterPct_,    TEXT_PRI(), LV_PART_MAIN);
+        lv_obj_set_style_text_color(waterLitres_, CYAN(),     LV_PART_MAIN);
+        lv_obj_set_style_bg_color(waterBar_, CYAN(), LV_PART_INDICATOR);
     }
 }
 
 void DashboardScreen::applyBatteryAlarm(float soc) {
-    char buf[48];
-
     if (soc <= ALARM_LOW_PCT) {
-        // Critical — red bar + red SOC + alarm text
+        // Critical — red band behind SOC row, black text, red bar
+        lv_obj_set_style_bg_color(battAlarmRow_, RED(), LV_PART_MAIN);
+        lv_obj_set_style_bg_opa(battAlarmRow_, OPA_FULL, LV_PART_MAIN);
+        lv_obj_set_style_text_color(battSoc_,   BLACK(), LV_PART_MAIN);
+        lv_obj_set_style_text_color(battVolts_, BLACK(), LV_PART_MAIN);
         lv_obj_set_style_bg_color(battBar_, RED(), LV_PART_INDICATOR);
-        lv_obj_set_style_text_color(battSoc_, RED(), LV_PART_MAIN);
-        snprintf(buf, sizeof(buf), "Battery critical");
-        lv_obj_set_style_text_color(battStatus_, RED(), LV_PART_MAIN);
-        lv_label_set_text(battStatus_, buf);
     } else if (soc >= ALARM_HIGH_PCT) {
-        // Nearly charged — keep green, positive label
+        // Nearly charged — positive state, no alarm band
+        lv_obj_set_style_bg_opa(battAlarmRow_, OPA_NONE, LV_PART_MAIN);
+        lv_obj_set_style_text_color(battSoc_,   TEXT_PRI(), LV_PART_MAIN);
+        lv_obj_set_style_text_color(battVolts_, TEXT_MUT(), LV_PART_MAIN);
         lv_obj_set_style_bg_color(battBar_, GREEN(), LV_PART_INDICATOR);
-        lv_obj_set_style_text_color(battSoc_, TEXT_PRI(), LV_PART_MAIN);
-        lv_obj_set_style_text_color(battStatus_, GREEN(), LV_PART_MAIN);
-        lv_label_set_text(battStatus_, "Nearly charged");
     } else {
-        // Normal — green bar, muted stats
+        // Normal
+        lv_obj_set_style_bg_opa(battAlarmRow_, OPA_NONE, LV_PART_MAIN);
+        lv_obj_set_style_text_color(battSoc_,   TEXT_PRI(), LV_PART_MAIN);
+        lv_obj_set_style_text_color(battVolts_, TEXT_MUT(), LV_PART_MAIN);
         lv_obj_set_style_bg_color(battBar_, GREEN(), LV_PART_INDICATOR);
-        lv_obj_set_style_text_color(battSoc_, TEXT_PRI(), LV_PART_MAIN);
-        lv_obj_set_style_text_color(battStatus_, TEXT_MUT(), LV_PART_MAIN);
-        // stats text is set in updateBattery() — no override needed here
     }
 }
 
