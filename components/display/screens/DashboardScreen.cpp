@@ -27,8 +27,7 @@ static constexpr int DOT_R          = DOT_SIZE / 2;               // 5
 static constexpr float MAX_DISP_DEG = 5.f;  // tilt at which dot reaches canvas edge
 
 // Battery section
-static constexpr int DIV_Y   = 208;
-static constexpr int BATT_Y  = DIV_Y + 8;  // 216
+static constexpr int BATT_Y  = 220;
 
 // ── Nav button callback ───────────────────────────────────────────────────────
 
@@ -186,15 +185,6 @@ void DashboardScreen::create(DisplayContext* ctx) {
     lv_obj_set_style_text_font(levelLabelY_, &lv_font_montserrat_12, LV_PART_MAIN);
     lv_obj_align(levelLabelY_, LV_ALIGN_TOP_RIGHT, -(LCD_W - LEVEL_X - LEVEL_SIZE), LEVEL_LABEL_Y);
 
-    // ── Divider ───────────────────────────────────────────────────────────
-    lv_obj_t* div = lv_obj_create(screen_);
-    lv_obj_set_size(div, LCD_W - 32, 1);
-    lv_obj_set_pos(div, 16, DIV_Y);
-    lv_obj_set_style_bg_color(div, BORDER(), LV_PART_MAIN);
-    lv_obj_set_style_bg_opa(div, OPA_FULL, LV_PART_MAIN);
-    lv_obj_set_style_border_width(div, 0, LV_PART_MAIN);
-    lv_obj_set_style_radius(div, 0, LV_PART_MAIN);
-
     // ── Battery section ───────────────────────────────────────────────────
     // Alarm background band — behind SOC + voltage row.
     battAlarmRow_ = lv_obj_create(screen_);
@@ -207,11 +197,18 @@ void DashboardScreen::create(DisplayContext* ctx) {
     lv_obj_clear_flag(battAlarmRow_, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_clear_flag(battAlarmRow_, LV_OBJ_FLAG_CLICKABLE);
 
+    // Section title — created after alarm band so it z-orders above it.
+    battTitle_ = lv_label_create(screen_);
+    lv_label_set_text(battTitle_, "BATTERY");
+    lv_obj_set_style_text_color(battTitle_, TEXT_SEC(), LV_PART_MAIN);
+    lv_obj_set_style_text_font(battTitle_, &lv_font_montserrat_10, LV_PART_MAIN);
+    lv_obj_set_pos(battTitle_, 12, BATT_Y - 14);
+
     battSoc_ = lv_label_create(screen_);
     lv_label_set_text(battSoc_, "--%");
     lv_obj_set_style_text_color(battSoc_, TEXT_PRI(), LV_PART_MAIN);
     lv_obj_set_style_text_font(battSoc_, &lv_font_montserrat_22, LV_PART_MAIN);
-    lv_obj_set_pos(battSoc_, 36, BATT_Y);
+    lv_obj_set_pos(battSoc_, 12, BATT_Y);
 
     battVolts_ = lv_label_create(screen_);
     lv_label_set_text(battVolts_, "--.- V");
@@ -231,6 +228,15 @@ void DashboardScreen::create(DisplayContext* ctx) {
     lv_obj_set_style_radius(battBar_, 4, LV_PART_MAIN);
     lv_obj_set_style_radius(battBar_, 4, LV_PART_INDICATOR);
     lv_obj_set_style_border_width(battBar_, 0, LV_PART_MAIN);
+
+    // Solar / load / net stats row — below the bar
+    battSolar_ = lv_label_create(screen_);
+    lv_label_set_text(battSolar_, "");
+    lv_obj_set_style_text_color(battSolar_, TEXT_MUT(), LV_PART_MAIN);
+    lv_obj_set_style_text_font(battSolar_, &lv_font_montserrat_10, LV_PART_MAIN);
+    lv_obj_set_pos(battSolar_, 12, BATT_Y + 46);
+    lv_obj_set_width(battSolar_, LCD_W - 24);
+    lv_label_set_long_mode(battSolar_, LV_LABEL_LONG_CLIP);
 
     // ── Nav button ────────────────────────────────────────────────────────
     makeNavButton(screen_, ctx);
@@ -270,6 +276,10 @@ void DashboardScreen::updateBattery(const BatteryData& data) {
 
     snprintf(buf, sizeof(buf), "%.1f V  %.1f A", data.voltage, data.current);
     lv_label_set_text(battVolts_, buf);
+
+    snprintf(buf, sizeof(buf), "Solar %.0fW  Yield today %.2fkWh",
+             data.solarW, data.solarYieldKwh);
+    lv_label_set_text(battSolar_, buf);
 
     applyBatteryAlarm(data.soc);
 }
