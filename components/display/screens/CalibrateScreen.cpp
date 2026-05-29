@@ -401,9 +401,19 @@ void CalibrateScreen::updateRaw(const WaterData& data) {
 
 void CalibrateScreen::updateLevel(const LevelData& data) {
     if (!tiltLabel_) return;
-    char buf[24];
-    snprintf(buf, sizeof(buf), "X:%.1f\xc2\xb0  Y:%.1f\xc2\xb0", data.tiltX, data.tiltY);
-    lv_label_set_text(tiltLabel_, buf);
+
+    // Button child label — first (and only) child of btnFlat_
+    lv_obj_t* btnLbl = lv_obj_get_child(btnFlat_, 0);
+
+    if (data.awaitingFlip) {
+        lv_label_set_text(tiltLabel_, "Flip, then hold");
+        if (btnLbl) lv_label_set_text(btnLbl, "Zero 2/2");
+    } else {
+        char buf[24];
+        snprintf(buf, sizeof(buf), "X:%.1f\xc2\xb0  Y:%.1f\xc2\xb0", data.tiltX, data.tiltY);
+        lv_label_set_text(tiltLabel_, buf);
+        if (btnLbl) lv_label_set_text(btnLbl, "Zero");
+    }
 }
 
 // ── Long-press callbacks ──────────────────────────────────────────────────────

@@ -35,8 +35,9 @@ struct BatteryData {
 };
 
 struct LevelData {
-    float tiltX;   // degrees — left/right tilt relative to screen face
-    float tiltY;   // degrees — top/bottom tilt relative to screen face
+    float tiltX;          // degrees — left/right tilt relative to screen face
+    float tiltY;          // degrees — top/bottom tilt relative to screen face
+    bool  awaitingFlip;   // true while waiting for pos2 of two-point cal
 };
 
 struct SystemData {

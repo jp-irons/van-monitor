@@ -96,6 +96,17 @@ private:
     // Default 0.0 — no correction until calibrated.
     float offsetTiltX_[3] = {};
     float offsetTiltY_[3] = {};
+
+    // ── Two-point reversal calibration state ──────────────────────────────
+    // After the first Zero press, pos1 tilt + timestamp are stored and
+    // awaitingPos2_ is set.  The second press (or a 15 s timeout) completes
+    // the calibration.  All RAM-only — not persisted across reboot.
+    static constexpr uint32_t FLIP_TIMEOUT_MS = 15'000;
+
+    bool     awaitingPos2_[3]    = {};
+    float    pos1TiltX_[3]       = {};
+    float    pos1TiltY_[3]       = {};
+    uint32_t pos1TimestampMs_[3] = {};
 };
 
 } // namespace app

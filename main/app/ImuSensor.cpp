@@ -180,8 +180,33 @@ void ImuSensor::poll(display::LevelData& out) {
     float tiltX, tiltY;
     int mode = dominantMode(gx, gy, gz, tiltX, tiltY);
 
-    out.tiltX = tiltX - offsetTiltX_[mode];
-    out.tiltY = tiltY - offsetTiltY_[mode];
+    // ── Two-point cal: cancel stale pending flags ─────────────────────────
+    // If the user drifted into a different orientation between presses, clear
+    // any pending flag for the other mode(s) without saving.
+    for (int m = 0; m < 3; ++m) {
+        if (m != mode && awaitingPos2_[m]) {
+            log.info("poll(): orientation changed — cancelling pending cal for mode %d", m);
+            awaitingPos2_[m] = false;
+        }
+    }
+
+    // ── Two-point cal: auto-save on timeout ───────────────────────────────
+    // If the user never performed the flip within FLIP_TIMEOUT_MS, fall back
+    // to saving the single pos1 reading (same result as old single-press cal).
+    if (awaitingPos2_[mode] &&
+        (lv_tick_elaps(pos1TimestampMs_[mode]) >= FLIP_TIMEOUT_MS)) {
+        log.info("poll(): flip timeout — saving single-point cal for mode %d  "
+                 "offsetX=%.2f°  offsetY=%.2f°",
+                 mode, pos1TiltX_[mode], pos1TiltY_[mode]);
+        offsetTiltX_[mode] = pos1TiltX_[mode];
+        offsetTiltY_[mode] = pos1TiltY_[mode];
+        awaitingPos2_[mode] = false;
+        saveCalibration();
+    }
+
+    out.tiltX        = tiltX - offsetTiltX_[mode];
+    out.tiltY        = tiltY - offsetTiltY_[mode];
+    out.awaitingFlip = awaitingPos2_[0] || awaitingPos2_[1] || awaitingPos2_[2];
 }
 
 // ── zero ─────────────────────────────────────────────────────────────────────
@@ -208,24 +233,52 @@ void ImuSensor::zero() {
     float gy = say / mag;
     float gz = saz / mag;
 
-    // Compute tilt using the same dominant-axis path as poll().
-    // Store the result as the offset for this orientation mode so that
-    // future poll() readings subtract it back to zero.
     float tiltX, tiltY;
     int mode = dominantMode(gx, gy, gz, tiltX, tiltY);
-
-    offsetTiltX_[mode] = tiltX;
-    offsetTiltY_[mode] = tiltY;
 
     static const char* modeNames[] = {
         "X-dominant (portrait)",
         "Y-dominant (landscape)",
         "Z-dominant (flat)"
     };
-    log.info("zero(): %s  offsetX=%.2f°  offsetY=%.2f°",
-             modeNames[mode], offsetTiltX_[mode], offsetTiltY_[mode]);
 
-    saveCalibration();
+    // Cancel any pending flag from a different orientation mode (shouldn't
+    // normally happen — poll() clears them, but be defensive here too).
+    for (int m = 0; m < 3; ++m) {
+        if (m != mode && awaitingPos2_[m]) {
+            log.info("zero(): cancelling stale pending cal for mode %d", m);
+            awaitingPos2_[m] = false;
+        }
+    }
+
+    if (awaitingPos2_[mode]) {
+        // ── Second press ──────────────────────────────────────────────────
+        // Check timeout — if expired treat this as a fresh first press.
+        if (lv_tick_elaps(pos1TimestampMs_[mode]) >= FLIP_TIMEOUT_MS) {
+            log.info("zero(): timeout on second press — restarting as first press");
+            awaitingPos2_[mode] = false;
+            // fall through to first-press path below
+        } else {
+            // Average pos1 and pos2 to extract the true sensor offset,
+            // eliminating any surface tilt: offset = (R1 + R2) / 2
+            offsetTiltX_[mode] = (pos1TiltX_[mode] + tiltX) / 2.0f;
+            offsetTiltY_[mode] = (pos1TiltY_[mode] + tiltY) / 2.0f;
+            awaitingPos2_[mode] = false;
+            log.info("zero(): two-point cal complete  %s  offsetX=%.2f°  offsetY=%.2f°",
+                     modeNames[mode], offsetTiltX_[mode], offsetTiltY_[mode]);
+            saveCalibration();
+            return;
+        }
+    }
+
+    // ── First press ───────────────────────────────────────────────────────
+    // Store pos1 and wait for the user to flip and press again.
+    pos1TiltX_[mode]       = tiltX;
+    pos1TiltY_[mode]       = tiltY;
+    pos1TimestampMs_[mode] = lv_tick_get();
+    awaitingPos2_[mode]    = true;
+    log.info("zero(): pos1 stored  %s  tiltX=%.2f°  tiltY=%.2f°  — flip 180° and hold Zero",
+             modeNames[mode], tiltX, tiltY);
 }
 
 // ── loadCalibration ───────────────────────────────────────────────────────────
