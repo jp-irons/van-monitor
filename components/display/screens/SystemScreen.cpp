@@ -138,9 +138,9 @@ void SystemScreen::create(DisplayContext* ctx) {
     lv_obj_add_event_cb(nav, navCb, LV_EVENT_CLICKED, ctx);
 
     lv_obj_t* navLbl = lv_label_create(nav);
-    lv_label_set_text(navLbl, "tap to cycle pages  >");
-    lv_obj_set_style_text_color(navLbl, TEXT_MUT(), LV_PART_MAIN);
-    lv_obj_set_style_text_font(navLbl, &lv_font_montserrat_10, LV_PART_MAIN);
+    lv_label_set_text(navLbl, "Tap to cycle pages  >");
+    lv_obj_set_style_text_color(navLbl, TEXT_SEC(), LV_PART_MAIN);
+    lv_obj_set_style_text_font(navLbl, &lv_font_montserrat_14, LV_PART_MAIN);
     lv_obj_align(navLbl, LV_ALIGN_CENTER, 0, 0);
 }
 

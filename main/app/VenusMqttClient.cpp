@@ -38,6 +38,7 @@ void VenusMqttClient::start() {
         nvs_get_str(h, "broker_ip", brokerIp_, &len);
         len = sizeof(portalId_);
         nvs_get_str(h, "portal_id", portalId_, &len);
+        nvs_get_u16(h, "solar_inst1", &solarInst1_);
         nvs_close(h);
     }
 
@@ -57,9 +58,9 @@ void VenusMqttClient::start() {
         snprintf(topicCurrent_,    sizeof(topicCurrent_),
                  "N/%s/system/0/Dc/Battery/Current",  portalId_);
         snprintf(topicSolarW_,     sizeof(topicSolarW_),
-                 "N/%s/solarcharger/258/Yield/Power", portalId_);  // VE.Direct instance 258
+                 "N/%s/solarcharger/%u/Yield/Power",  portalId_, solarInst1_);
         snprintf(topicSolarYield_, sizeof(topicSolarYield_),
-                 "N/%s/solarcharger/258/Yield/User",  portalId_);  // VE.Direct instance 258
+                 "N/%s/solarcharger/%u/Yield/User",   portalId_, solarInst1_);
         log.info("portal_id=%s  keepalive: %s", portalId_, keepaliveTopic_);
     } else {
         log.warn("portal_id not configured — keepalive and subscriptions disabled");

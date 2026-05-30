@@ -41,8 +41,8 @@ inline lv_color_t CONTROL()  { return lv_color_hex(0x374151); }  // +/- buttons,
 
 // Text
 inline lv_color_t TEXT_PRI() { return lv_color_hex(0xe2e8f0); }  // primary values
-inline lv_color_t TEXT_SEC() { return lv_color_hex(0x9ca3af); }  // labels / keys
-inline lv_color_t TEXT_MUT() { return lv_color_hex(0x6b7280); }  // hints / units
+inline lv_color_t TEXT_SEC() { return lv_color_hex(0xb8c4d0); }  // labels / keys
+inline lv_color_t TEXT_MUT() { return lv_color_hex(0x9ca3af); }  // hints / units
 
 // Semantic accents
 inline lv_color_t CYAN()     { return lv_color_hex(0x38bdf8); }  // water level (normal)

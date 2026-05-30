@@ -19,15 +19,15 @@ static constexpr int WATER_BAR_H = 8;
 
 // Level widget
 static constexpr int LEVEL_Y        = 90;   // top of crosshair container
-static constexpr int LEVEL_SIZE     = 96;   // crosshair container width & height
-static constexpr int LEVEL_X        = (LCD_W - LEVEL_SIZE) / 2;  // centred = 72
-static constexpr int LEVEL_LABEL_Y  = LEVEL_Y + LEVEL_SIZE + 4;  // 180
+static constexpr int LEVEL_SIZE     = 100;  // crosshair container width & height
+static constexpr int LEVEL_X        = 90;   // nudged right to leave room for BATTERY label
+static constexpr int LEVEL_LABEL_Y  = LEVEL_Y + LEVEL_SIZE + 4;  // 194
 static constexpr int DOT_SIZE       = 10;
 static constexpr int DOT_R          = DOT_SIZE / 2;               // 5
 static constexpr float MAX_DISP_DEG = 5.f;  // tilt at which dot reaches canvas edge
 
 // Battery section
-static constexpr int BATT_Y  = 220;
+static constexpr int BATT_Y  = 216;
 
 // ── Nav button callback ───────────────────────────────────────────────────────
 
@@ -202,7 +202,7 @@ void DashboardScreen::create(DisplayContext* ctx) {
     lv_label_set_text(battTitle_, "BATTERY");
     lv_obj_set_style_text_color(battTitle_, TEXT_SEC(), LV_PART_MAIN);
     lv_obj_set_style_text_font(battTitle_, &lv_font_montserrat_10, LV_PART_MAIN);
-    lv_obj_set_pos(battTitle_, 12, BATT_Y - 14);
+    lv_obj_set_pos(battTitle_, 12, LEVEL_Y + LEVEL_SIZE - 12);
 
     battSoc_ = lv_label_create(screen_);
     lv_label_set_text(battSoc_, "--%");
@@ -212,8 +212,8 @@ void DashboardScreen::create(DisplayContext* ctx) {
 
     battVolts_ = lv_label_create(screen_);
     lv_label_set_text(battVolts_, "--.- V");
-    lv_obj_set_style_text_color(battVolts_, TEXT_MUT(), LV_PART_MAIN);
-    lv_obj_set_style_text_font(battVolts_, &lv_font_montserrat_12, LV_PART_MAIN);
+    lv_obj_set_style_text_color(battVolts_, TEXT_PRI(), LV_PART_MAIN);
+    lv_obj_set_style_text_font(battVolts_, &lv_font_montserrat_14, LV_PART_MAIN);
     lv_obj_align(battVolts_, LV_ALIGN_TOP_RIGHT, -12, BATT_Y + 5);
 
     battBar_ = lv_bar_create(screen_);
@@ -232,8 +232,8 @@ void DashboardScreen::create(DisplayContext* ctx) {
     // Solar / load / net stats row — below the bar
     battSolar_ = lv_label_create(screen_);
     lv_label_set_text(battSolar_, "");
-    lv_obj_set_style_text_color(battSolar_, TEXT_MUT(), LV_PART_MAIN);
-    lv_obj_set_style_text_font(battSolar_, &lv_font_montserrat_10, LV_PART_MAIN);
+    lv_obj_set_style_text_color(battSolar_, TEXT_PRI(), LV_PART_MAIN);
+    lv_obj_set_style_text_font(battSolar_, &lv_font_montserrat_14, LV_PART_MAIN);
     lv_obj_set_pos(battSolar_, 12, BATT_Y + 46);
     lv_obj_set_width(battSolar_, LCD_W - 24);
     lv_label_set_long_mode(battSolar_, LV_LABEL_LONG_CLIP);
@@ -277,7 +277,7 @@ void DashboardScreen::updateBattery(const BatteryData& data) {
     snprintf(buf, sizeof(buf), "%.1f V  %.1f A", data.voltage, data.current);
     lv_label_set_text(battVolts_, buf);
 
-    snprintf(buf, sizeof(buf), "Solar %.0fW  Yield today %.2fkWh",
+    snprintf(buf, sizeof(buf), "Solar %.0fW  %.2fkWh today",
              data.solarW, data.solarYieldKwh);
     lv_label_set_text(battSolar_, buf);
 
@@ -366,13 +366,13 @@ void DashboardScreen::applyBatteryAlarm(float soc) {
         // Nearly charged — positive state, no alarm band
         lv_obj_set_style_bg_opa(battAlarmRow_, OPA_NONE, LV_PART_MAIN);
         lv_obj_set_style_text_color(battSoc_,   TEXT_PRI(), LV_PART_MAIN);
-        lv_obj_set_style_text_color(battVolts_, TEXT_MUT(), LV_PART_MAIN);
+        lv_obj_set_style_text_color(battVolts_, TEXT_PRI(), LV_PART_MAIN);
         lv_obj_set_style_bg_color(battBar_, GREEN(), LV_PART_INDICATOR);
     } else {
         // Normal
         lv_obj_set_style_bg_opa(battAlarmRow_, OPA_NONE, LV_PART_MAIN);
         lv_obj_set_style_text_color(battSoc_,   TEXT_PRI(), LV_PART_MAIN);
-        lv_obj_set_style_text_color(battVolts_, TEXT_MUT(), LV_PART_MAIN);
+        lv_obj_set_style_text_color(battVolts_, TEXT_PRI(), LV_PART_MAIN);
         lv_obj_set_style_bg_color(battBar_, GREEN(), LV_PART_INDICATOR);
     }
 }
@@ -395,9 +395,9 @@ lv_obj_t* DashboardScreen::makeNavButton(lv_obj_t* parent, DisplayContext* ctx) 
     lv_obj_add_event_cb(btn, navCb, LV_EVENT_CLICKED, ctx);
 
     lv_obj_t* lbl = lv_label_create(btn);
-    lv_label_set_text(lbl, "tap to cycle pages  >");
-    lv_obj_set_style_text_color(lbl, TEXT_MUT(), LV_PART_MAIN);
-    lv_obj_set_style_text_font(lbl, &lv_font_montserrat_10, LV_PART_MAIN);
+    lv_label_set_text(lbl, "Tap to cycle pages  >");
+    lv_obj_set_style_text_color(lbl, TEXT_SEC(), LV_PART_MAIN);
+    lv_obj_set_style_text_font(lbl, &lv_font_montserrat_14, LV_PART_MAIN);
     lv_obj_align(lbl, LV_ALIGN_CENTER, 0, 0);
 
     return btn;
