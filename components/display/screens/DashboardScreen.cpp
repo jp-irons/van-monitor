@@ -13,21 +13,21 @@ using namespace theme;
 
 // ── Layout constants ──────────────────────────────────────────────────────────
 
-// Water section
-static constexpr int WATER_Y    = HEADER_H;        // 28 — top of water section
+// Water section — starts at top of screen (no header bar)
+static constexpr int WATER_Y    = 0;
 static constexpr int WATER_BAR_H = 8;
 
 // Level widget
-static constexpr int LEVEL_Y        = 90;   // top of crosshair container
-static constexpr int LEVEL_SIZE     = 100;  // crosshair container width & height
-static constexpr int LEVEL_X        = 90;   // nudged right to leave room for BATTERY label
-static constexpr int LEVEL_LABEL_Y  = LEVEL_Y + LEVEL_SIZE + 4;  // 194
+static constexpr int LEVEL_Y        = 68;   // top of crosshair container
+static constexpr int LEVEL_SIZE     = 120;  // crosshair container width & height
+static constexpr int LEVEL_X        = 90;   // nudged right to leave room for Y-axis degree label
+static constexpr int LEVEL_LABEL_Y  = LEVEL_Y + LEVEL_SIZE + 8;  // 196 — row shared by BATTERY label + X-axis degree
 static constexpr int DOT_SIZE       = 10;
 static constexpr int DOT_R          = DOT_SIZE / 2;               // 5
-static constexpr float MAX_DISP_DEG = 5.f;  // tilt at which dot reaches canvas edge
+static constexpr float MAX_DISP_DEG = 7.f;  // tilt at which dot reaches canvas edge
 
 // Battery section
-static constexpr int BATT_Y  = 216;
+static constexpr int BATT_Y  = 214;
 
 // ── Nav button callback ───────────────────────────────────────────────────────
 
@@ -47,45 +47,30 @@ void DashboardScreen::create(DisplayContext* ctx) {
     lv_obj_set_style_border_width(screen_, 0, LV_PART_MAIN);
     lv_obj_set_style_pad_all(screen_, 0, LV_PART_MAIN);
 
-    // ── Header bar ────────────────────────────────────────────────────────
-    lv_obj_t* header = lv_obj_create(screen_);
-    lv_obj_set_size(header, LCD_W, HEADER_H);
-    lv_obj_set_pos(header, 0, 0);
-    lv_obj_set_style_bg_color(header, SURFACE(), LV_PART_MAIN);
-    lv_obj_set_style_bg_opa(header, OPA_FULL, LV_PART_MAIN);
-    lv_obj_set_style_border_width(header, 0, LV_PART_MAIN);
-    lv_obj_set_style_radius(header, 0, LV_PART_MAIN);
-    lv_obj_set_style_pad_all(header, 0, LV_PART_MAIN);
-    lv_obj_clear_flag(header, LV_OBJ_FLAG_SCROLLABLE);
-
-    lv_obj_t* title = lv_label_create(header);
-    lv_label_set_text(title, "VAN MONITOR");
-    lv_obj_set_style_text_color(title, TEXT_SEC(), LV_PART_MAIN);
-    lv_obj_set_style_text_font(title, &lv_font_montserrat_10, LV_PART_MAIN);
-    lv_obj_align(title, LV_ALIGN_LEFT_MID, 10, 0);
-
-    dotWifi_ = lv_obj_create(header);
+    // ── Status dots — top-right, vertically centred on the WATER label row ──
+    // (No header bar — dots share the WATER title row)
+    dotWifi_ = lv_obj_create(screen_);
     lv_obj_set_size(dotWifi_, 6, 6);
     lv_obj_set_style_radius(dotWifi_, LV_RADIUS_CIRCLE, LV_PART_MAIN);
     lv_obj_set_style_bg_color(dotWifi_, GREEN(), LV_PART_MAIN);
     lv_obj_set_style_bg_opa(dotWifi_, OPA_FULL, LV_PART_MAIN);
     lv_obj_set_style_border_width(dotWifi_, 0, LV_PART_MAIN);
-    lv_obj_align(dotWifi_, LV_ALIGN_RIGHT_MID, -22, 0);
+    lv_obj_align(dotWifi_, LV_ALIGN_TOP_RIGHT, -22, 8);
 
-    dotMqtt_ = lv_obj_create(header);
+    dotMqtt_ = lv_obj_create(screen_);
     lv_obj_set_size(dotMqtt_, 6, 6);
     lv_obj_set_style_radius(dotMqtt_, LV_RADIUS_CIRCLE, LV_PART_MAIN);
     lv_obj_set_style_bg_color(dotMqtt_, CYAN(), LV_PART_MAIN);
     lv_obj_set_style_bg_opa(dotMqtt_, OPA_FULL, LV_PART_MAIN);
     lv_obj_set_style_border_width(dotMqtt_, 0, LV_PART_MAIN);
-    lv_obj_align(dotMqtt_, LV_ALIGN_RIGHT_MID, -10, 0);
+    lv_obj_align(dotMqtt_, LV_ALIGN_TOP_RIGHT, -10, 8);
 
     // ── Water section ─────────────────────────────────────────────────────
     // Title
     lv_obj_t* waterTitle = lv_label_create(screen_);
     lv_label_set_text(waterTitle, "WATER");
     lv_obj_set_style_text_color(waterTitle, TEXT_SEC(), LV_PART_MAIN);
-    lv_obj_set_style_text_font(waterTitle, &lv_font_montserrat_10, LV_PART_MAIN);
+    lv_obj_set_style_text_font(waterTitle, &lv_font_montserrat_14, LV_PART_MAIN);
     lv_obj_set_pos(waterTitle, 12, WATER_Y + 4);
 
     // Alarm background band — full-width, sits behind pct + litres labels.
@@ -93,7 +78,7 @@ void DashboardScreen::create(DisplayContext* ctx) {
     // Normally transparent; turns amber under alarm conditions.
     waterAlarmRow_ = lv_obj_create(screen_);
     lv_obj_set_size(waterAlarmRow_, LCD_W, 32);
-    lv_obj_set_pos(waterAlarmRow_, 0, WATER_Y + 14);
+    lv_obj_set_pos(waterAlarmRow_, 0, WATER_Y + 20);
     lv_obj_set_style_bg_opa(waterAlarmRow_, OPA_NONE, LV_PART_MAIN);
     lv_obj_set_style_border_width(waterAlarmRow_, 0, LV_PART_MAIN);
     lv_obj_set_style_radius(waterAlarmRow_, 0, LV_PART_MAIN);
@@ -101,24 +86,24 @@ void DashboardScreen::create(DisplayContext* ctx) {
     lv_obj_clear_flag(waterAlarmRow_, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_clear_flag(waterAlarmRow_, LV_OBJ_FLAG_CLICKABLE);
 
-    // Percentage label — left side of value row
+    // Percentage label — left side of value row (extra gap below title)
     waterPct_ = lv_label_create(screen_);
     lv_label_set_text(waterPct_, "--%");
     lv_obj_set_style_text_color(waterPct_, TEXT_PRI(), LV_PART_MAIN);
     lv_obj_set_style_text_font(waterPct_, &lv_font_montserrat_22, LV_PART_MAIN);
-    lv_obj_set_pos(waterPct_, 12, WATER_Y + 18);
+    lv_obj_set_pos(waterPct_, 12, WATER_Y + 24);
 
     // Litres label — right-aligned on same row
     waterLitres_ = lv_label_create(screen_);
     lv_label_set_text(waterLitres_, "-- L");
     lv_obj_set_style_text_color(waterLitres_, CYAN(), LV_PART_MAIN);
     lv_obj_set_style_text_font(waterLitres_, &lv_font_montserrat_14, LV_PART_MAIN);
-    lv_obj_align(waterLitres_, LV_ALIGN_TOP_RIGHT, -12, WATER_Y + 24);
+    lv_obj_align(waterLitres_, LV_ALIGN_TOP_RIGHT, -12, WATER_Y + 30);
 
     // Bar
     waterBar_ = lv_bar_create(screen_);
     lv_obj_set_size(waterBar_, LCD_W - 24, WATER_BAR_H);
-    lv_obj_set_pos(waterBar_, 12, WATER_Y + 50);
+    lv_obj_set_pos(waterBar_, 12, WATER_Y + 54);
     lv_bar_set_range(waterBar_, 0, 100);
     lv_bar_set_value(waterBar_, 0, LV_ANIM_OFF);
     lv_obj_set_style_bg_color(waterBar_, TRACK(), LV_PART_MAIN);
@@ -145,7 +130,7 @@ void DashboardScreen::create(DisplayContext* ctx) {
     // Horizontal crosshair line
     lv_obj_t* lineH = lv_obj_create(levelContainer_);
     lv_obj_set_size(lineH, LEVEL_SIZE, 1);
-    lv_obj_set_style_bg_color(lineH, BORDER(), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(lineH, CONTROL(), LV_PART_MAIN);
     lv_obj_set_style_bg_opa(lineH, OPA_FULL, LV_PART_MAIN);
     lv_obj_set_style_border_width(lineH, 0, LV_PART_MAIN);
     lv_obj_set_style_radius(lineH, 0, LV_PART_MAIN);
@@ -155,7 +140,7 @@ void DashboardScreen::create(DisplayContext* ctx) {
     // Vertical crosshair line
     lv_obj_t* lineV = lv_obj_create(levelContainer_);
     lv_obj_set_size(lineV, 1, LEVEL_SIZE);
-    lv_obj_set_style_bg_color(lineV, BORDER(), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(lineV, CONTROL(), LV_PART_MAIN);
     lv_obj_set_style_bg_opa(lineV, OPA_FULL, LV_PART_MAIN);
     lv_obj_set_style_border_width(lineV, 0, LV_PART_MAIN);
     lv_obj_set_style_radius(lineV, 0, LV_PART_MAIN);
@@ -172,23 +157,30 @@ void DashboardScreen::create(DisplayContext* ctx) {
     lv_obj_add_flag(levelDot_, LV_OBJ_FLAG_IGNORE_LAYOUT);
     lv_obj_set_pos(levelDot_, LEVEL_SIZE / 2 - DOT_R, LEVEL_SIZE / 2 - DOT_R);
 
-    // Degree labels — below the container, left and right
+    // X-axis degree label — below container, centred on widget midpoint.
+    // Shares the BATTERY label row (LEVEL_LABEL_Y).
     levelLabelX_ = lv_label_create(screen_);
     lv_label_set_text(levelLabelX_, "0.0\xc2\xb0");  // UTF-8 degree symbol
     lv_obj_set_style_text_color(levelLabelX_, GREEN(), LV_PART_MAIN);
-    lv_obj_set_style_text_font(levelLabelX_, &lv_font_montserrat_12, LV_PART_MAIN);
+    lv_obj_set_style_text_font(levelLabelX_, &lv_font_montserrat_14, LV_PART_MAIN);
     lv_obj_set_pos(levelLabelX_, LEVEL_X, LEVEL_LABEL_Y);
+    lv_obj_set_width(levelLabelX_, LEVEL_SIZE);
+    lv_obj_set_style_text_align(levelLabelX_, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
 
+    // Y-axis degree label — left of container, vertically centred with widget.
+    // Right-aligned within the left column so it sits close to the widget edge.
     levelLabelY_ = lv_label_create(screen_);
     lv_label_set_text(levelLabelY_, "0.0\xc2\xb0");
     lv_obj_set_style_text_color(levelLabelY_, GREEN(), LV_PART_MAIN);
-    lv_obj_set_style_text_font(levelLabelY_, &lv_font_montserrat_12, LV_PART_MAIN);
-    lv_obj_align(levelLabelY_, LV_ALIGN_TOP_RIGHT, -(LCD_W - LEVEL_X - LEVEL_SIZE), LEVEL_LABEL_Y);
+    lv_obj_set_style_text_font(levelLabelY_, &lv_font_montserrat_14, LV_PART_MAIN);
+    lv_obj_set_pos(levelLabelY_, 12, LEVEL_Y + LEVEL_SIZE / 2 - 8);
+    lv_obj_set_width(levelLabelY_, LEVEL_X - 16);
+    lv_obj_set_style_text_align(levelLabelY_, LV_TEXT_ALIGN_RIGHT, LV_PART_MAIN);
 
     // ── Battery section ───────────────────────────────────────────────────
     // Alarm background band — behind SOC + voltage row.
     battAlarmRow_ = lv_obj_create(screen_);
-    lv_obj_set_size(battAlarmRow_, LCD_W, 32);
+    lv_obj_set_size(battAlarmRow_, LCD_W, 34);
     lv_obj_set_pos(battAlarmRow_, 0, BATT_Y - 2);
     lv_obj_set_style_bg_opa(battAlarmRow_, OPA_NONE, LV_PART_MAIN);
     lv_obj_set_style_border_width(battAlarmRow_, 0, LV_PART_MAIN);
@@ -197,12 +189,13 @@ void DashboardScreen::create(DisplayContext* ctx) {
     lv_obj_clear_flag(battAlarmRow_, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_clear_flag(battAlarmRow_, LV_OBJ_FLAG_CLICKABLE);
 
-    // Section title — created after alarm band so it z-orders above it.
+    // Section title — shares the degree-label row below the level widget.
+    // Created after alarm band so it z-orders above it.
     battTitle_ = lv_label_create(screen_);
     lv_label_set_text(battTitle_, "BATTERY");
     lv_obj_set_style_text_color(battTitle_, TEXT_SEC(), LV_PART_MAIN);
-    lv_obj_set_style_text_font(battTitle_, &lv_font_montserrat_10, LV_PART_MAIN);
-    lv_obj_set_pos(battTitle_, 12, LEVEL_Y + LEVEL_SIZE - 12);
+    lv_obj_set_style_text_font(battTitle_, &lv_font_montserrat_14, LV_PART_MAIN);
+    lv_obj_set_pos(battTitle_, 12, LEVEL_LABEL_Y);
 
     battSoc_ = lv_label_create(screen_);
     lv_label_set_text(battSoc_, "--%");
@@ -264,6 +257,14 @@ void DashboardScreen::updateWater(const WaterData& data) {
     applyWaterAlarm(data.pct);
 }
 
+// ── fmtKwh ────────────────────────────────────────────────────────────────────
+
+static void fmtKwh(char* buf, size_t len, float kwh) {
+    if      (kwh < 10.f)  snprintf(buf, len, "%.2f kWh", kwh);
+    else if (kwh < 100.f) snprintf(buf, len, "%.1f kWh", kwh);
+    else                  snprintf(buf, len, "%.0f kWh", kwh);
+}
+
 // ── updateBattery ─────────────────────────────────────────────────────────────
 
 void DashboardScreen::updateBattery(const BatteryData& data) {
@@ -277,8 +278,9 @@ void DashboardScreen::updateBattery(const BatteryData& data) {
     snprintf(buf, sizeof(buf), "%.1f V  %.1f A", data.voltage, data.current);
     lv_label_set_text(battVolts_, buf);
 
-    snprintf(buf, sizeof(buf), "Solar %.0fW  %.2fkWh today",
-             data.solarW, data.solarYieldKwh);
+    char kwhBuf[16];
+    fmtKwh(kwhBuf, sizeof(kwhBuf), data.solarYieldKwh);
+    snprintf(buf, sizeof(buf), "Solar %.0fW  %s today", data.solarW, kwhBuf);
     lv_label_set_text(battSolar_, buf);
 
     applyBatteryAlarm(data.soc);
@@ -291,10 +293,23 @@ void DashboardScreen::updateLevel(const LevelData& data) {
     static constexpr int HALF    = LEVEL_SIZE / 2;           // 48
     static constexpr int MAX_PX  = HALF - DOT_R;             // 43
 
-    int dx = static_cast<int>(data.tiltX / MAX_DISP_DEG * MAX_PX);
-    int dy = static_cast<int>(data.tiltY / MAX_DISP_DEG * MAX_PX);
-    dx = std::clamp(dx, -MAX_PX, MAX_PX);
-    dy = std::clamp(dy, -MAX_PX, MAX_PX);
+    // Log-compressed mapping: linear inside ±KNEE_DEG, log-tapered beyond.
+    // Gives fine sensitivity near level where it matters for parking.
+    static constexpr float KNEE_DEG  = 3.0f;
+    static constexpr float LOG_SCALE =
+        (MAX_DISP_DEG - KNEE_DEG) / logf(1.f + MAX_DISP_DEG - KNEE_DEG);
+
+    auto compress = [&](float raw) -> int {
+        float a = fabsf(raw);
+        float d = (a <= KNEE_DEG)
+            ? a
+            : KNEE_DEG + logf(1.f + (a - KNEE_DEG)) * LOG_SCALE;
+        float px = (raw >= 0 ? 1.f : -1.f) * d / MAX_DISP_DEG * MAX_PX;
+        return std::clamp(static_cast<int>(px), -MAX_PX, MAX_PX);
+    };
+
+    int dx = compress(data.tiltX);
+    int dy = compress(data.tiltY);
 
     lv_obj_set_pos(levelDot_, HALF + dx - DOT_R, HALF + dy - DOT_R);
 

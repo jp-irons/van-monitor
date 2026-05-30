@@ -61,7 +61,7 @@
         setText('bat-voltage',     fmt(b.voltage,        1, ' V'));
         setText('bat-current',     fmt(b.current,        1, ' A'));
         setText('bat-solar',       fmt(b.solarW,         0, ' W'));
-        setText('bat-solar-yield', fmt(b.solarYieldKwh,  2, ' kWh'));
+        setText('bat-solar-yield', fmtKwh(b.solarYieldKwh));
         setText('bat-load',        fmt(b.loadW,          0, ' W'));
     }
 
@@ -218,6 +218,12 @@
     /** Format a numeric value with fixed decimals and a unit suffix, or '—'. */
     function fmt(val, decimals, unit) {
         return typeof val === 'number' ? val.toFixed(decimals) + unit : '—';
+    }
+
+    function fmtKwh(val) {
+        if (typeof val !== 'number') return '—';
+        const dp = val < 10 ? 2 : val < 100 ? 1 : 0;
+        return val.toFixed(dp) + ' kWh';
     }
 
     // ── Public API (used by inline onclick handlers) ───────────────────────────

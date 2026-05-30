@@ -14,12 +14,14 @@ struct LevelData;
  * DashboardScreen — page 1 of the van monitor UI.
  *
  * Layout (240 × 320):
- *   [0  – 27]  Header bar:  "VAN MONITOR" + Wi-Fi / MQTT status dots
- *   [28 – 73]  Water section: title, pct + litres row, bar
+ *   [0  –  63] Water section: "WATER" title (montserrat_14) + Wi-Fi/MQTT dots
+ *              top-right, pct + litres row, bar
  *              Alarm state (≤10 % / ≥90 %): bar + text turn amber (no banner)
- *   [80 – 191] Level widget: 96×96 crosshair + dot + degree labels
+ *   [68 – 187] Level widget: 120×120 crosshair + dot
+ *              Y-axis degree left of widget (vertically centred)
  *              Dot colour: green ≤1°, amber 1–3°, red >3°
- *   [206– 283] Battery: "BATTERY" title, SOC row, bar, solar/load/net stats
+ *   [196– 196] Shared row: "BATTERY" label left + X-axis degree centred under widget
+ *   [212– 283] Battery: SOC row, bar, solar/load/net stats
  *              Alarm state (≤10 %): bar + SOC red.  (≥90 %): green label.
  *   [284– 319] Nav button: "tap to cycle pages >"
  */
