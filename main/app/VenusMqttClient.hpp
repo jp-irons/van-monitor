@@ -99,8 +99,9 @@ private:
     std::atomic<bool>        justConnected_ {false};
 
     // ── NVS-persisted config (populated in start()) ───────────────────────
-    char brokerIp_ [64] = {};
-    char portalId_ [32] = {};
+    char     brokerIp_   [64] = {};
+    char     portalId_   [32] = {};
+    uint16_t solarInst1_      = 288;
 
     // ── Pre-computed topic strings (populated in start()) ─────────────────
     // Max length: "N/" (2) + portal_id (31) + "/system/0/Dc/Battery/Current" (28) + NUL = 62
@@ -108,8 +109,8 @@ private:
     char topicSoc_        [64] = {};  // N/<portal_id>/system/0/Dc/Battery/Soc
     char topicVoltage_    [64] = {};  // N/<portal_id>/system/0/Dc/Battery/Voltage
     char topicCurrent_    [64] = {};  // N/<portal_id>/system/0/Dc/Battery/Current
-    char topicSolarW_     [64] = {};  // N/<portal_id>/solarcharger/258/Yield/Power  (VE.Direct instance)
-    char topicSolarYield_ [64] = {};  // N/<portal_id>/solarcharger/258/Yield/User   (VE.Direct instance)
+    char topicSolarW_     [68] = {};  // N/<portal_id>/solarcharger/<solarInst1_>/Yield/Power
+    char topicSolarYield_ [68] = {};  // N/<portal_id>/solarcharger/<solarInst1_>/Yield/User
 
     // ── Latest received values (written by MQTT task, read by main loop) ──
     float latestSoc_          {0.0f};

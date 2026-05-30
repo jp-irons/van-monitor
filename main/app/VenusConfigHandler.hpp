@@ -40,7 +40,7 @@ public:
     common::Result handle(http::HttpRequest& req, http::HttpResponse& res) override;
 
     // ── NVS defaults ─────────────────────────────────────────────────────────
-    static constexpr uint16_t SOLAR_INST1_DEFAULT = 258;
+    static constexpr uint16_t SOLAR_INST1_DEFAULT = 288;
     static constexpr uint16_t SOLAR_INST2_DEFAULT = 0;
 
 private:
