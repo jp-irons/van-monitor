@@ -32,7 +32,6 @@ private:
 
     // Value labels — updated in update()
     lv_obj_t* valWifi_    {nullptr};
-    lv_obj_t* badgeWifi_  {nullptr};
     lv_obj_t* valIp_      {nullptr};
     lv_obj_t* valHost_    {nullptr};
     lv_obj_t* valMqtt_    {nullptr};

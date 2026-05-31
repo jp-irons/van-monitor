@@ -42,7 +42,7 @@ void SystemScreen::create(DisplayContext* ctx) {
     lv_obj_t* title = lv_label_create(header);
     lv_label_set_text(title, "SYSTEM");
     lv_obj_set_style_text_color(title, TEXT_SEC(), LV_PART_MAIN);
-    lv_obj_set_style_text_font(title, &lv_font_montserrat_10, LV_PART_MAIN);
+    lv_obj_set_style_text_font(title, &lv_font_montserrat_12, LV_PART_MAIN);
     lv_obj_align(title, LV_ALIGN_LEFT_MID, 10, 0);
 
     // ── Info rows ─────────────────────────────────────────────────────────
@@ -54,11 +54,10 @@ void SystemScreen::create(DisplayContext* ctx) {
     valWifi_   = lv_label_create(rowWifi);
     lv_label_set_text(valWifi_, "-");
     lv_obj_set_style_text_color(valWifi_, TEXT_PRI(), LV_PART_MAIN);
-    lv_obj_set_style_text_font(valWifi_, &lv_font_montserrat_12, LV_PART_MAIN);
-    lv_obj_align(valWifi_, LV_ALIGN_LEFT_MID, 62, 0);
-    lv_obj_set_width(valWifi_, 100);
+    lv_obj_set_style_text_font(valWifi_, &lv_font_montserrat_14, LV_PART_MAIN);
+    lv_obj_align(valWifi_, LV_ALIGN_LEFT_MID, 78, 0);
+    lv_obj_set_width(valWifi_, 140);
     lv_label_set_long_mode(valWifi_, LV_LABEL_LONG_CLIP);
-    badgeWifi_ = makeBadge(rowWifi, false);
     y += ROW_H + 4;
 
     // IP
@@ -66,8 +65,8 @@ void SystemScreen::create(DisplayContext* ctx) {
     valIp_ = lv_label_create(rowIp);
     lv_label_set_text(valIp_, "-");
     lv_obj_set_style_text_color(valIp_, TEXT_PRI(), LV_PART_MAIN);
-    lv_obj_set_style_text_font(valIp_, &lv_font_montserrat_12, LV_PART_MAIN);
-    lv_obj_align(valIp_, LV_ALIGN_LEFT_MID, 62, 0);
+    lv_obj_set_style_text_font(valIp_, &lv_font_montserrat_14, LV_PART_MAIN);
+    lv_obj_align(valIp_, LV_ALIGN_LEFT_MID, 78, 0);
     y += ROW_H + 4;
 
     // Hostname
@@ -75,9 +74,9 @@ void SystemScreen::create(DisplayContext* ctx) {
     valHost_ = lv_label_create(rowHost);
     lv_label_set_text(valHost_, "-");
     lv_obj_set_style_text_color(valHost_, TEXT_PRI(), LV_PART_MAIN);
-    lv_obj_set_style_text_font(valHost_, &lv_font_montserrat_12, LV_PART_MAIN);
-    lv_obj_align(valHost_, LV_ALIGN_LEFT_MID, 62, 0);
-    lv_obj_set_width(valHost_, 165);
+    lv_obj_set_style_text_font(valHost_, &lv_font_montserrat_14, LV_PART_MAIN);
+    lv_obj_align(valHost_, LV_ALIGN_LEFT_MID, 78, 0);
+    lv_obj_set_width(valHost_, 140);
     lv_label_set_long_mode(valHost_, LV_LABEL_LONG_CLIP);
     y += ROW_H + 4;
 
@@ -86,8 +85,8 @@ void SystemScreen::create(DisplayContext* ctx) {
     valMqtt_ = lv_label_create(rowMqtt);
     lv_label_set_text(valMqtt_, "-");
     lv_obj_set_style_text_color(valMqtt_, TEXT_PRI(), LV_PART_MAIN);
-    lv_obj_set_style_text_font(valMqtt_, &lv_font_montserrat_12, LV_PART_MAIN);
-    lv_obj_align(valMqtt_, LV_ALIGN_LEFT_MID, 62, 0);
+    lv_obj_set_style_text_font(valMqtt_, &lv_font_montserrat_14, LV_PART_MAIN);
+    lv_obj_align(valMqtt_, LV_ALIGN_LEFT_MID, 78, 0);
     lv_obj_set_width(valMqtt_, 100);
     lv_label_set_long_mode(valMqtt_, LV_LABEL_LONG_CLIP);
     badgeMqtt_ = makeBadge(rowMqtt, false);
@@ -98,8 +97,8 @@ void SystemScreen::create(DisplayContext* ctx) {
     valVenus_ = lv_label_create(rowVenus);
     lv_label_set_text(valVenus_, "-");
     lv_obj_set_style_text_color(valVenus_, TEXT_PRI(), LV_PART_MAIN);
-    lv_obj_set_style_text_font(valVenus_, &lv_font_montserrat_12, LV_PART_MAIN);
-    lv_obj_align(valVenus_, LV_ALIGN_LEFT_MID, 62, 0);
+    lv_obj_set_style_text_font(valVenus_, &lv_font_montserrat_14, LV_PART_MAIN);
+    lv_obj_align(valVenus_, LV_ALIGN_LEFT_MID, 78, 0);
     lv_obj_set_width(valVenus_, 100);
     lv_label_set_long_mode(valVenus_, LV_LABEL_LONG_CLIP);
     badgeVenus_ = makeBadge(rowVenus, false);
@@ -110,8 +109,8 @@ void SystemScreen::create(DisplayContext* ctx) {
     valUptime_ = lv_label_create(rowUptime);
     lv_label_set_text(valUptime_, "-");
     lv_obj_set_style_text_color(valUptime_, TEXT_PRI(), LV_PART_MAIN);
-    lv_obj_set_style_text_font(valUptime_, &lv_font_montserrat_12, LV_PART_MAIN);
-    lv_obj_align(valUptime_, LV_ALIGN_LEFT_MID, 62, 0);
+    lv_obj_set_style_text_font(valUptime_, &lv_font_montserrat_14, LV_PART_MAIN);
+    lv_obj_align(valUptime_, LV_ALIGN_LEFT_MID, 78, 0);
     y += ROW_H + 4;
 
     // Firmware
@@ -119,8 +118,8 @@ void SystemScreen::create(DisplayContext* ctx) {
     valFw_ = lv_label_create(rowFw);
     lv_label_set_text(valFw_, "-");
     lv_obj_set_style_text_color(valFw_, TEXT_PRI(), LV_PART_MAIN);
-    lv_obj_set_style_text_font(valFw_, &lv_font_montserrat_12, LV_PART_MAIN);
-    lv_obj_align(valFw_, LV_ALIGN_LEFT_MID, 62, 0);
+    lv_obj_set_style_text_font(valFw_, &lv_font_montserrat_14, LV_PART_MAIN);
+    lv_obj_align(valFw_, LV_ALIGN_LEFT_MID, 78, 0);
 
     // ── Nav button ────────────────────────────────────────────────────────
     lv_obj_t* nav = lv_obj_create(screen_);
@@ -156,13 +155,12 @@ void SystemScreen::update(const SystemData& data) {
     char buf[64];
 
     // Wi-Fi
-    snprintf(buf, sizeof(buf), "%s  %d dBm", data.ssid, data.rssi);
+    if (data.ssid && data.ssid[0]) {
+        snprintf(buf, sizeof(buf), "%s  %d dBm", data.ssid, data.rssi);
+    } else {
+        snprintf(buf, sizeof(buf), "Err");
+    }
     lv_label_set_text(valWifi_, buf);
-    lv_obj_set_style_bg_color(badgeWifi_,
-        data.rssi > -80 ? lv_color_hex(0x14532d) : lv_color_hex(0x4c1d1d),
-        LV_PART_MAIN);
-    lv_obj_t* badgeWifiLbl = lv_obj_get_child(badgeWifi_, 0);
-    lv_label_set_text(badgeWifiLbl, data.rssi > -80 ? "OK" : "WEAK");
 
     // IP
     lv_label_set_text(valIp_, data.ipAddr);
@@ -215,8 +213,8 @@ lv_obj_t* SystemScreen::makeRow(lv_obj_t* parent, int yPos,
     lv_obj_t* keyLbl = lv_label_create(row);
     lv_label_set_text(keyLbl, key);
     lv_obj_set_style_text_color(keyLbl, TEXT_MUT(), LV_PART_MAIN);
-    lv_obj_set_style_text_font(keyLbl, &lv_font_montserrat_10, LV_PART_MAIN);
-    lv_obj_set_width(keyLbl, 58);
+    lv_obj_set_style_text_font(keyLbl, &lv_font_montserrat_12, LV_PART_MAIN);
+    lv_obj_set_width(keyLbl, 70);
     lv_obj_align(keyLbl, LV_ALIGN_LEFT_MID, 6, 0);
     lv_label_set_long_mode(keyLbl, LV_LABEL_LONG_CLIP);
 

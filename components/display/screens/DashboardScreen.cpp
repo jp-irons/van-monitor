@@ -22,8 +22,8 @@ static constexpr int LEVEL_Y        = 68;   // top of crosshair container
 static constexpr int LEVEL_SIZE     = 120;  // crosshair container width & height
 static constexpr int LEVEL_X        = 90;   // nudged right to leave room for Y-axis degree label
 static constexpr int LEVEL_LABEL_Y  = LEVEL_Y + LEVEL_SIZE + 8;  // 196 — row shared by BATTERY label + X-axis degree
-static constexpr int DOT_SIZE       = 10;
-static constexpr int DOT_R          = DOT_SIZE / 2;               // 5
+static constexpr int DOT_SIZE       = 12;
+static constexpr int DOT_R          = DOT_SIZE / 2;               // 6
 static constexpr float MAX_DISP_DEG = 7.f;  // tilt at which dot reaches canvas edge
 
 // Battery section
@@ -121,7 +121,7 @@ void DashboardScreen::create(DisplayContext* ctx) {
     lv_obj_set_pos(levelContainer_, LEVEL_X, LEVEL_Y);
     lv_obj_set_style_bg_color(levelContainer_, SURFACE(), LV_PART_MAIN);
     lv_obj_set_style_bg_opa(levelContainer_, OPA_FULL, LV_PART_MAIN);
-    lv_obj_set_style_border_color(levelContainer_, BORDER(), LV_PART_MAIN);
+    lv_obj_set_style_border_color(levelContainer_, TEXT_MUT(), LV_PART_MAIN);
     lv_obj_set_style_border_width(levelContainer_, 1, LV_PART_MAIN);
     lv_obj_set_style_radius(levelContainer_, 4, LV_PART_MAIN);
     lv_obj_set_style_pad_all(levelContainer_, 0, LV_PART_MAIN);
@@ -130,7 +130,7 @@ void DashboardScreen::create(DisplayContext* ctx) {
     // Horizontal crosshair line
     lv_obj_t* lineH = lv_obj_create(levelContainer_);
     lv_obj_set_size(lineH, LEVEL_SIZE, 1);
-    lv_obj_set_style_bg_color(lineH, CONTROL(), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(lineH, TEXT_MUT(), LV_PART_MAIN);
     lv_obj_set_style_bg_opa(lineH, OPA_FULL, LV_PART_MAIN);
     lv_obj_set_style_border_width(lineH, 0, LV_PART_MAIN);
     lv_obj_set_style_radius(lineH, 0, LV_PART_MAIN);
@@ -140,7 +140,7 @@ void DashboardScreen::create(DisplayContext* ctx) {
     // Vertical crosshair line
     lv_obj_t* lineV = lv_obj_create(levelContainer_);
     lv_obj_set_size(lineV, 1, LEVEL_SIZE);
-    lv_obj_set_style_bg_color(lineV, CONTROL(), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(lineV, TEXT_MUT(), LV_PART_MAIN);
     lv_obj_set_style_bg_opa(lineV, OPA_FULL, LV_PART_MAIN);
     lv_obj_set_style_border_width(lineV, 0, LV_PART_MAIN);
     lv_obj_set_style_radius(lineV, 0, LV_PART_MAIN);
@@ -162,7 +162,7 @@ void DashboardScreen::create(DisplayContext* ctx) {
     levelLabelX_ = lv_label_create(screen_);
     lv_label_set_text(levelLabelX_, "0.0\xc2\xb0");  // UTF-8 degree symbol
     lv_obj_set_style_text_color(levelLabelX_, GREEN(), LV_PART_MAIN);
-    lv_obj_set_style_text_font(levelLabelX_, &lv_font_montserrat_14, LV_PART_MAIN);
+    lv_obj_set_style_text_font(levelLabelX_, &lv_font_montserrat_16, LV_PART_MAIN);
     lv_obj_set_pos(levelLabelX_, LEVEL_X, LEVEL_LABEL_Y);
     lv_obj_set_width(levelLabelX_, LEVEL_SIZE);
     lv_obj_set_style_text_align(levelLabelX_, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
@@ -172,7 +172,7 @@ void DashboardScreen::create(DisplayContext* ctx) {
     levelLabelY_ = lv_label_create(screen_);
     lv_label_set_text(levelLabelY_, "0.0\xc2\xb0");
     lv_obj_set_style_text_color(levelLabelY_, GREEN(), LV_PART_MAIN);
-    lv_obj_set_style_text_font(levelLabelY_, &lv_font_montserrat_14, LV_PART_MAIN);
+    lv_obj_set_style_text_font(levelLabelY_, &lv_font_montserrat_16, LV_PART_MAIN);
     lv_obj_set_pos(levelLabelY_, 12, LEVEL_Y + LEVEL_SIZE / 2 - 8);
     lv_obj_set_width(levelLabelY_, LEVEL_X - 16);
     lv_obj_set_style_text_align(levelLabelY_, LV_TEXT_ALIGN_RIGHT, LV_PART_MAIN);
@@ -316,8 +316,8 @@ void DashboardScreen::updateLevel(const LevelData& data) {
     // ── Colour based on worst-axis severity ───────────────────────────────
     float worst = std::max(fabsf(data.tiltX), fabsf(data.tiltY));
     lv_color_t col;
-    if (worst >= LEVEL_ERR_DEG)       col = RED();
-    else if (worst >= LEVEL_WARN_DEG) col = AMBER();
+    if (worst >= LEVEL_ERR_DEG)       col = LEVEL_ERR();
+    else if (worst >= LEVEL_WARN_DEG) col = LEVEL_WARN();
     else                               col = GREEN();
 
     lv_obj_set_style_bg_color(levelDot_, col, LV_PART_MAIN);

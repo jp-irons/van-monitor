@@ -112,7 +112,7 @@ namespace app {
 	    // onDeactivate: dim display + return to dashboard if on another page.
 	    // Display calls are guarded so the activity manager works without display hardware.
 	    activityManager_.start(
-	        60'000,
+	        600'000,
 	        [this] {
 #if CONFIG_VAN_MONITOR_DISPLAY_ENABLED
 	            display_.brighten();

@@ -72,7 +72,7 @@ static lv_obj_t* makeDivLabel(lv_obj_t* parent, int y, const char* text) {
     lv_obj_t* lbl = lv_label_create(parent);
     lv_label_set_text(lbl, text);
     lv_obj_set_style_text_color(lbl, TEXT_MUT(), LV_PART_MAIN);
-    lv_obj_set_style_text_font(lbl, &lv_font_montserrat_10, LV_PART_MAIN);
+    lv_obj_set_style_text_font(lbl, &lv_font_montserrat_14, LV_PART_MAIN);
     lv_obj_set_pos(lbl, 8, y);
     return lbl;
 }
@@ -112,7 +112,7 @@ static lv_obj_t* makeCalRow(lv_obj_t* parent, int y,
     lv_obj_t* valLbl = lv_label_create(row);
     lv_label_set_text(valLbl, initValue);
     lv_obj_set_style_text_color(valLbl, TEXT_PRI(), LV_PART_MAIN);
-    lv_obj_set_style_text_font(valLbl, &lv_font_montserrat_12, LV_PART_MAIN);
+    lv_obj_set_style_text_font(valLbl, &lv_font_montserrat_16, LV_PART_MAIN);
     lv_obj_set_width(valLbl, ROW_W - BTN_W - 22);   // stay left of button
     lv_obj_align(valLbl, LV_ALIGN_LEFT_MID, 10, 0);
     *valueOut = valLbl;
@@ -133,7 +133,7 @@ static lv_obj_t* makeCalRow(lv_obj_t* parent, int y,
     lv_obj_t* lbl = lv_label_create(btn);
     lv_label_set_text(lbl, btnLabel);
     lv_obj_set_style_text_color(lbl, TEXT_PRI(), LV_PART_MAIN);
-    lv_obj_set_style_text_font(lbl, &lv_font_montserrat_12, LV_PART_MAIN);
+    lv_obj_set_style_text_font(lbl, &lv_font_montserrat_16, LV_PART_MAIN);
     lv_obj_align(lbl, LV_ALIGN_CENTER, 0, 0);
 
     return btn;
@@ -169,7 +169,7 @@ void CalibrateScreen::create(DisplayContext* ctx) {
     lv_obj_t* headerTitle = lv_label_create(header);
     lv_label_set_text(headerTitle, "CALIBRATE");
     lv_obj_set_style_text_color(headerTitle, TEXT_SEC(), LV_PART_MAIN);
-    lv_obj_set_style_text_font(headerTitle, &lv_font_montserrat_10, LV_PART_MAIN);
+    lv_obj_set_style_text_font(headerTitle, &lv_font_montserrat_12, LV_PART_MAIN);
     lv_obj_align(headerTitle, LV_ALIGN_LEFT_MID, 10, 0);
 
     // ── Tank capacity row ─────────────────────────────────────────────────
@@ -187,7 +187,7 @@ void CalibrateScreen::create(DisplayContext* ctx) {
     lv_obj_t* capKey = lv_label_create(capRow);
     lv_label_set_text(capKey, "Tank capacity");
     lv_obj_set_style_text_color(capKey, TEXT_SEC(), LV_PART_MAIN);
-    lv_obj_set_style_text_font(capKey, &lv_font_montserrat_12, LV_PART_MAIN);
+    lv_obj_set_style_text_font(capKey, &lv_font_montserrat_14, LV_PART_MAIN);
     lv_obj_align(capKey, LV_ALIGN_LEFT_MID, 10, 0);
 
     // − button
@@ -272,13 +272,13 @@ void CalibrateScreen::create(DisplayContext* ctx) {
             lv_obj_t* lbl = lv_label_create(btnEmpty_);
             lv_label_set_text(lbl, "Empty");
             lv_obj_set_style_text_color(lbl, TEXT_PRI(), LV_PART_MAIN);
-            lv_obj_set_style_text_font(lbl, &lv_font_montserrat_12, LV_PART_MAIN);
+            lv_obj_set_style_text_font(lbl, &lv_font_montserrat_16, LV_PART_MAIN);
             lv_obj_align(lbl, LV_ALIGN_CENTER, 0, 0);
         }
 
         emptyValLbl_ = lv_label_create(wp);
         lv_obj_set_style_text_color(emptyValLbl_, TEXT_PRI(), LV_PART_MAIN);
-        lv_obj_set_style_text_font(emptyValLbl_, &lv_font_montserrat_12, LV_PART_MAIN);
+        lv_obj_set_style_text_font(emptyValLbl_, &lv_font_montserrat_16, LV_PART_MAIN);
         lv_obj_set_pos(emptyValLbl_, 10, 12);
 
         // ── Separator ─────────────────────────────────────────────────────
@@ -306,13 +306,13 @@ void CalibrateScreen::create(DisplayContext* ctx) {
             lv_obj_t* lbl = lv_label_create(btnFull_);
             lv_label_set_text(lbl, "Full");
             lv_obj_set_style_text_color(lbl, TEXT_PRI(), LV_PART_MAIN);
-            lv_obj_set_style_text_font(lbl, &lv_font_montserrat_12, LV_PART_MAIN);
+            lv_obj_set_style_text_font(lbl, &lv_font_montserrat_16, LV_PART_MAIN);
             lv_obj_align(lbl, LV_ALIGN_CENTER, 0, 0);
         }
 
         fullValLbl_ = lv_label_create(wp);
         lv_obj_set_style_text_color(fullValLbl_, TEXT_PRI(), LV_PART_MAIN);
-        lv_obj_set_style_text_font(fullValLbl_, &lv_font_montserrat_12, LV_PART_MAIN);
+        lv_obj_set_style_text_font(fullValLbl_, &lv_font_montserrat_16, LV_PART_MAIN);
         lv_obj_set_pos(fullValLbl_, 10, 51);
 
         // ── Separator ─────────────────────────────────────────────────────
@@ -328,13 +328,13 @@ void CalibrateScreen::create(DisplayContext* ctx) {
         lv_obj_t* voltKey = lv_label_create(wp);
         lv_label_set_text(voltKey, "Voltage");
         lv_obj_set_style_text_color(voltKey, TEXT_MUT(), LV_PART_MAIN);
-        lv_obj_set_style_text_font(voltKey, &lv_font_montserrat_10, LV_PART_MAIN);
+        lv_obj_set_style_text_font(voltKey, &lv_font_montserrat_14, LV_PART_MAIN);
         lv_obj_set_pos(voltKey, 10, 85);
 
         rawVolts_ = lv_label_create(wp);
         lv_label_set_text(rawVolts_, "-");
         lv_obj_set_style_text_color(rawVolts_, TEXT_SEC(), LV_PART_MAIN);
-        lv_obj_set_style_text_font(rawVolts_, &lv_font_montserrat_10, LV_PART_MAIN);
+        lv_obj_set_style_text_font(rawVolts_, &lv_font_montserrat_14, LV_PART_MAIN);
         lv_obj_align_to(rawVolts_, voltKey, LV_ALIGN_OUT_RIGHT_MID, 4, 0);
     }
 

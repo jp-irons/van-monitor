@@ -45,10 +45,14 @@ inline lv_color_t TEXT_SEC() { return lv_color_hex(0xb8c4d0); }  // labels / key
 inline lv_color_t TEXT_MUT() { return lv_color_hex(0x9ca3af); }  // hints / units
 
 // Semantic accents
-inline lv_color_t CYAN()     { return lv_color_hex(0x38bdf8); }  // water level (normal)
-inline lv_color_t GREEN()    { return lv_color_hex(0x4ade80); }  // battery (normal / good)
-inline lv_color_t AMBER()    { return lv_color_hex(0xf97316); }  // near-empty / near-full
-inline lv_color_t RED()      { return lv_color_hex(0xef4444); }  // critical (battery)
+inline lv_color_t CYAN()       { return lv_color_hex(0x38bdf8); }  // water level (normal)
+inline lv_color_t GREEN()      { return lv_color_hex(0x4ade80); }  // battery (normal / good)
+inline lv_color_t AMBER()      { return lv_color_hex(0xf97316); }  // near-empty / near-full (alarm backgrounds)
+inline lv_color_t RED()        { return lv_color_hex(0xef4444); }  // critical (alarm backgrounds)
+
+// Level-widget accent colours — brighter than AMBER/RED for visibility on dark bg
+inline lv_color_t LEVEL_WARN() { return lv_color_hex(0xfde047); }  // bright yellow-amber (1–3°)
+inline lv_color_t LEVEL_ERR()  { return lv_color_hex(0xf87171); }  // light red (>3°)
 inline lv_color_t BLUE()     { return lv_color_hex(0x1d6fa8); }  // Empty button bg
 inline lv_color_t BLUE_BDR() { return lv_color_hex(0x60b4f0); }  // Empty button border
 inline lv_color_t DARK_GRN() { return lv_color_hex(0x166534); }  // Full button bg
