@@ -62,7 +62,6 @@
         setText('bat-current',     fmt(b.current,        1, ' A'));
         setText('bat-solar',       fmt(b.solarW,         0, ' W'));
         setText('bat-solar-yield', fmtKwh(b.solarYieldKwh));
-        setText('bat-load',        fmt(b.loadW,          0, ' W'));
     }
 
     // ── Calibrate rendering ───────────────────────────────────────────────────

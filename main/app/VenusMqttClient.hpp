@@ -12,7 +12,8 @@ namespace app {
  * VenusMqttClient — manages the ESP-IDF MQTT connection to a Venus OS broker.
  *
  * Steps 2 + 3 of the Venus OS integration:
- *   - Reads broker_ip and portal_id from NVS namespace "venus".
+ *   - Reads broker_ip, portal_id, solar_inst1, and solar_inst2 from NVS
+ *     namespace "venus".
  *   - Connects to mqtt://<broker_ip>:1883 (no auth — local network only).
  *   - Sends a keepalive publish to R/<portal_id>/keepalive immediately on
  *     connect and every ~55 s thereafter, which Venus OS requires before it
@@ -20,11 +21,15 @@ namespace app {
  *
  * Step 4 — subscriptions:
  *   On connect, subscribes to:
- *     N/<portal_id>/system/0/Dc/Battery/Soc      → latestSoc_
- *     N/<portal_id>/system/0/Dc/Battery/Voltage  → latestVoltage_
- *     N/<portal_id>/system/0/Dc/Battery/Current  → latestCurrent_
- *     N/<portal_id>/solarcharger/258/Yield/Power → latestSolarW_        (VE.Direct instance 258)
- *     N/<portal_id>/solarcharger/258/Yield/User  → latestSolarYieldKwh_ (VE.Direct instance 258)
+ *     N/<portal_id>/system/0/Dc/Battery/Soc           → latestSoc_
+ *     N/<portal_id>/system/0/Dc/Battery/Voltage       → latestVoltage_
+ *     N/<portal_id>/system/0/Dc/Battery/Current       → latestCurrent_
+ *     N/<portal_id>/solarcharger/<inst1>/Yield/Power  → latestSolarW1_
+ *     N/<portal_id>/solarcharger/<inst1>/Yield/User   → latestSolarYieldKwh1_
+ *   If solar_inst2 is non-zero, also subscribes to:
+ *     N/<portal_id>/solarcharger/<inst2>/Yield/Power  → latestSolarW2_
+ *     N/<portal_id>/solarcharger/<inst2>/Yield/User   → latestSolarYieldKwh2_
+ *   fillBattery() sums both chargers' values.
  *   Venus publishes each as {"value": <number>} or {"value": null}.
  *
  * Threading:
@@ -102,22 +107,28 @@ private:
     char     brokerIp_   [64] = {};
     char     portalId_   [32] = {};
     uint16_t solarInst1_      = 288;
+    uint16_t solarInst2_      = 0;    // 0 = not configured; second charger optional
 
     // ── Pre-computed topic strings (populated in start()) ─────────────────
-    // Max length: "N/" (2) + portal_id (31) + "/system/0/Dc/Battery/Current" (28) + NUL = 62
-    char keepaliveTopic_  [48] = {};  // R/<portal_id>/keepalive
-    char topicSoc_        [64] = {};  // N/<portal_id>/system/0/Dc/Battery/Soc
-    char topicVoltage_    [64] = {};  // N/<portal_id>/system/0/Dc/Battery/Voltage
-    char topicCurrent_    [64] = {};  // N/<portal_id>/system/0/Dc/Battery/Current
-    char topicSolarW_     [68] = {};  // N/<portal_id>/solarcharger/<solarInst1_>/Yield/Power
-    char topicSolarYield_ [68] = {};  // N/<portal_id>/solarcharger/<solarInst1_>/Yield/User
+    // Max length: "N/" (2) + portal_id (31) + "/solarcharger/" (14) + inst (5) +
+    //             "/Yield/Power" (12) + NUL = 65 → use 68 for alignment
+    char keepaliveTopic_   [48] = {};  // R/<portal_id>/keepalive
+    char topicSoc_         [64] = {};  // N/<portal_id>/system/0/Dc/Battery/Soc
+    char topicVoltage_     [64] = {};  // N/<portal_id>/system/0/Dc/Battery/Voltage
+    char topicCurrent_     [64] = {};  // N/<portal_id>/system/0/Dc/Battery/Current
+    char topicSolarW1_     [68] = {};  // N/<portal_id>/solarcharger/<solarInst1_>/Yield/Power
+    char topicSolarYield1_ [68] = {};  // N/<portal_id>/solarcharger/<solarInst1_>/Yield/User
+    char topicSolarW2_     [68] = {};  // N/<portal_id>/solarcharger/<solarInst2_>/Yield/Power
+    char topicSolarYield2_ [68] = {};  // N/<portal_id>/solarcharger/<solarInst2_>/Yield/User
 
     // ── Latest received values (written by MQTT task, read by main loop) ──
-    float latestSoc_          {0.0f};
-    float latestVoltage_      {0.0f};
-    float latestCurrent_      {0.0f};
-    float latestSolarW_       {0.0f};
-    float latestSolarYieldKwh_{0.0f};
+    float latestSoc_           {0.0f};
+    float latestVoltage_       {0.0f};
+    float latestCurrent_       {0.0f};
+    float latestSolarW1_       {0.0f};
+    float latestSolarYieldKwh1_{0.0f};
+    float latestSolarW2_       {0.0f};  // zero when inst2 not configured
+    float latestSolarYieldKwh2_{0.0f};
     uint32_t lastKeepaliveTick_ {0};
     bool     started_           {false};
 };

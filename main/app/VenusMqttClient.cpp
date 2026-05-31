@@ -39,6 +39,7 @@ void VenusMqttClient::start() {
         len = sizeof(portalId_);
         nvs_get_str(h, "portal_id", portalId_, &len);
         nvs_get_u16(h, "solar_inst1", &solarInst1_);
+        nvs_get_u16(h, "solar_inst2", &solarInst2_);
         nvs_close(h);
     }
 
@@ -57,10 +58,17 @@ void VenusMqttClient::start() {
                  "N/%s/system/0/Dc/Battery/Voltage",  portalId_);
         snprintf(topicCurrent_,    sizeof(topicCurrent_),
                  "N/%s/system/0/Dc/Battery/Current",  portalId_);
-        snprintf(topicSolarW_,     sizeof(topicSolarW_),
+        snprintf(topicSolarW1_,     sizeof(topicSolarW1_),
                  "N/%s/solarcharger/%u/Yield/Power",  portalId_, solarInst1_);
-        snprintf(topicSolarYield_, sizeof(topicSolarYield_),
+        snprintf(topicSolarYield1_, sizeof(topicSolarYield1_),
                  "N/%s/solarcharger/%u/Yield/User",   portalId_, solarInst1_);
+        if (solarInst2_ != 0) {
+            snprintf(topicSolarW2_,     sizeof(topicSolarW2_),
+                     "N/%s/solarcharger/%u/Yield/Power",  portalId_, solarInst2_);
+            snprintf(topicSolarYield2_, sizeof(topicSolarYield2_),
+                     "N/%s/solarcharger/%u/Yield/User",   portalId_, solarInst2_);
+            log.info("solar charger 2 instance %u configured", solarInst2_);
+        }
         log.info("portal_id=%s  keepalive: %s", portalId_, keepaliveTopic_);
     } else {
         log.warn("portal_id not configured — keepalive and subscriptions disabled");
@@ -118,8 +126,8 @@ void VenusMqttClient::fillBattery(display::BatteryData& out) const {
     out.soc           = latestSoc_;
     out.voltage       = latestVoltage_;
     out.current       = latestCurrent_;
-    out.solarW        = latestSolarW_;
-    out.solarYieldKwh = latestSolarYieldKwh_;
+    out.solarW        = latestSolarW1_        + latestSolarW2_;
+    out.solarYieldKwh = latestSolarYieldKwh1_ + latestSolarYieldKwh2_;
     out.loadW         = 0.0f;  // not yet subscribed
 }
 
@@ -146,9 +154,14 @@ void VenusMqttClient::onEvent(esp_mqtt_event_handle_t event) {
                 esp_mqtt_client_subscribe(client_, topicSoc_,        0);
                 esp_mqtt_client_subscribe(client_, topicVoltage_,    0);
                 esp_mqtt_client_subscribe(client_, topicCurrent_,    0);
-                esp_mqtt_client_subscribe(client_, topicSolarW_,     0);
-                esp_mqtt_client_subscribe(client_, topicSolarYield_, 0);
-                log.info("subscribed to battery + solar topics");
+                esp_mqtt_client_subscribe(client_, topicSolarW1_,     0);
+                esp_mqtt_client_subscribe(client_, topicSolarYield1_, 0);
+                if (solarInst2_ != 0) {
+                    esp_mqtt_client_subscribe(client_, topicSolarW2_,     0);
+                    esp_mqtt_client_subscribe(client_, topicSolarYield2_, 0);
+                }
+                log.info("subscribed to battery + solar topics (%s)",
+                         solarInst2_ != 0 ? "2 chargers" : "1 charger");
             }
             break;
 
@@ -164,11 +177,13 @@ void VenusMqttClient::onEvent(esp_mqtt_event_handle_t event) {
                        memcmp(t, event->topic, event->topic_len) == 0;
             };
 
-            if      (topicIs(topicSoc_))        { latestSoc_           = val; }
-            else if (topicIs(topicVoltage_))     { latestVoltage_       = val; }
-            else if (topicIs(topicCurrent_))     { latestCurrent_       = val; }
-            else if (topicIs(topicSolarW_))      { latestSolarW_        = val; }
-            else if (topicIs(topicSolarYield_))  { latestSolarYieldKwh_ = val; }
+            if      (topicIs(topicSoc_))         { latestSoc_            = val; }
+            else if (topicIs(topicVoltage_))      { latestVoltage_        = val; }
+            else if (topicIs(topicCurrent_))      { latestCurrent_        = val; }
+            else if (topicIs(topicSolarW1_))      { latestSolarW1_        = val; }
+            else if (topicIs(topicSolarYield1_))  { latestSolarYieldKwh1_ = val; }
+            else if (topicIs(topicSolarW2_))      { latestSolarW2_        = val; }
+            else if (topicIs(topicSolarYield2_))  { latestSolarYieldKwh2_ = val; }
             break;
         }
 
