@@ -61,12 +61,12 @@ void VenusMqttClient::start() {
         snprintf(topicSolarW1_,     sizeof(topicSolarW1_),
                  "N/%s/solarcharger/%u/Yield/Power",  portalId_, solarInst1_);
         snprintf(topicSolarYield1_, sizeof(topicSolarYield1_),
-                 "N/%s/solarcharger/%u/Yield/User",   portalId_, solarInst1_);
+                 "N/%s/solarcharger/%u/History/Daily/0/Yield", portalId_, solarInst1_);
         if (solarInst2_ != 0) {
             snprintf(topicSolarW2_,     sizeof(topicSolarW2_),
                      "N/%s/solarcharger/%u/Yield/Power",  portalId_, solarInst2_);
             snprintf(topicSolarYield2_, sizeof(topicSolarYield2_),
-                     "N/%s/solarcharger/%u/Yield/User",   portalId_, solarInst2_);
+                     "N/%s/solarcharger/%u/History/Daily/0/Yield", portalId_, solarInst2_);
             log.info("solar charger 2 instance %u configured", solarInst2_);
         }
         log.info("portal_id=%s  keepalive: %s", portalId_, keepaliveTopic_);

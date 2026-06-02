@@ -117,9 +117,9 @@ private:
     char topicVoltage_     [64] = {};  // N/<portal_id>/system/0/Dc/Battery/Voltage
     char topicCurrent_     [64] = {};  // N/<portal_id>/system/0/Dc/Battery/Current
     char topicSolarW1_     [68] = {};  // N/<portal_id>/solarcharger/<solarInst1_>/Yield/Power
-    char topicSolarYield1_ [68] = {};  // N/<portal_id>/solarcharger/<solarInst1_>/Yield/User
+    char topicSolarYield1_ [80] = {};  // N/<portal_id>/solarcharger/<solarInst1_>/History/Daily/0/Yield
     char topicSolarW2_     [68] = {};  // N/<portal_id>/solarcharger/<solarInst2_>/Yield/Power
-    char topicSolarYield2_ [68] = {};  // N/<portal_id>/solarcharger/<solarInst2_>/Yield/User
+    char topicSolarYield2_ [80] = {};  // N/<portal_id>/solarcharger/<solarInst2_>/History/Daily/0/Yield
 
     // ── Latest received values (written by MQTT task, read by main loop) ──
     float latestSoc_           {0.0f};
