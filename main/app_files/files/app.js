@@ -10,7 +10,7 @@
 
     // ── Tab switching ─────────────────────────────────────────────────────────
 
-    const tabs   = document.querySelectorAll('.app-tab');
+    const tabs   = document.querySelectorAll('.emb-nav-link[data-tab]');
     const panels = document.querySelectorAll('.app-tab-panel');
 
     tabs.forEach(tab => {
@@ -33,13 +33,10 @@
             const data = await res.json();
             renderDashboard(data);
             renderCalibrate(data);
-            renderSystem(data);
             const ts = 'Updated ' + new Date().toLocaleTimeString();
             setStatusLine('dash-status', ts);
-            setStatusLine('sys-status',  ts);
         } catch (e) {
             setStatusLine('dash-status', 'Could not reach device');
-            setStatusLine('sys-status',  'Could not reach device');
         } finally {
             refreshTimer = setTimeout(fetchStatus, REFRESH_MS);
         }
@@ -77,23 +74,6 @@
         if (!capInput.value && typeof w.tankLitres === 'number' && w.tankLitres > 0) {
             capInput.value = w.tankLitres;
         }
-    }
-
-    // ── System rendering ──────────────────────────────────────────────────────
-
-    function renderSystem(d) {
-        const s = d.system || {};
-        setText('sys-uptime',   typeof s.uptimeS === 'number' ? formatUptime(s.uptimeS) : '—');
-        setText('sys-firmware', s.firmwareVersion || '—');
-    }
-
-    function formatUptime(s) {
-        const d = Math.floor(s / 86400);
-        const h = Math.floor((s % 86400) / 3600);
-        const m = Math.floor((s % 3600) / 60);
-        if (d > 0) return `${d}d ${h}h ${m}m`;
-        if (h > 0) return `${h}h ${m}m`;
-        return `${m}m`;
     }
 
     // ── Calibrate actions ─────────────────────────────────────────────────────

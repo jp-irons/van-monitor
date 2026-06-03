@@ -14,6 +14,9 @@
     <nav class="emb-nav">
       <span class="emb-nav-title">Van Monitor</span>
       <div class="emb-nav-actions">
+        <button class="emb-nav-link active" data-tab="dashboard">Dashboard</button>
+        <button class="emb-nav-link"        data-tab="calibrate">Calibrate</button>
+        <button class="emb-nav-link"        data-tab="venus">Venus OS</button>
         <div class="emb-nav-menu">
           <button id="nav-settings-btn" class="emb-nav-btn"
                   aria-haspopup="true" aria-expanded="false">
@@ -30,14 +33,6 @@
         </div>
       </div>
     </nav>
-
-    <!-- Tab bar -->
-    <div class="app-tabs">
-      <button class="app-tab active" data-tab="dashboard">Dashboard</button>
-      <button class="app-tab"        data-tab="calibrate">Calibrate</button>
-      <button class="app-tab"        data-tab="system">System</button>
-      <button class="app-tab"        data-tab="venus">Venus OS</button>
-    </div>
 
     <!-- ── Dashboard tab ───────────────────────────────────────────────────── -->
     <div id="tab-dashboard" class="app-tab-panel">
@@ -99,19 +94,6 @@
       </div>
 
       <p id="cal-status" class="app-status-line"></p>
-    </div>
-
-    <!-- ── System tab ──────────────────────────────────────────────────────── -->
-    <div id="tab-system" class="app-tab-panel hidden">
-
-      <div class="app-stat-grid">
-        <div class="app-stat-label">Uptime</div>
-        <div class="app-stat-value" id="sys-uptime">—</div>
-        <div class="app-stat-label">Firmware</div>
-        <div class="app-stat-value" id="sys-firmware">—</div>
-      </div>
-
-      <p id="sys-status" class="app-status-line">Loading…</p>
     </div>
 
     <!-- ── Venus OS tab ──────────────────────────────────────────────────── -->
