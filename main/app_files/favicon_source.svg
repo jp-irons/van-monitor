@@ -1,20 +1,16 @@
 <svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
-  <rect x="0" y="0" width="256" height="256" rx="48" fill="#0b3a52"/>
-
-  <!-- sun rays -->
-  <g stroke="#f5b942" stroke-width="9" stroke-linecap="round">
-    <line x1="178" y1="46" x2="178" y2="24"/>
-    <line x1="208" y1="58" x2="225" y2="42"/>
-    <line x1="222" y1="86" x2="246" y2="86"/>
+  <g stroke="#f5b942" stroke-width="13" stroke-linecap="round">
+    <line x1="172" y1="43" x2="172" y2="13"/>
+    <line x1="142" y1="57" x2="121" y2="36"/>
+    <line x1="202" y1="57" x2="223" y2="36"/>
+    <line x1="209" y1="80" x2="236" y2="80"/>
+    <line x1="202" y1="105" x2="225" y2="126"/>
+    <line x1="172" y1="117" x2="172" y2="146"/>
   </g>
-  <circle cx="178" cy="86" r="26" fill="#f5b942"/>
-
-  <!-- droplet -->
-  <path d="M128 50 C 128 50 80 122 80 164 C 80 195 101 218 128 218 C 155 218 176 195 176 164 C 176 122 128 50 128 50 Z"
-        fill="#2f8fd1" stroke="#dff1fb" stroke-width="5"/>
-
-  <!-- battery cell marks inside droplet -->
-  <rect x="106" y="146" width="44" height="12" rx="3" fill="#dff1fb"/>
-  <rect x="106" y="166" width="44" height="12" rx="3" fill="#dff1fb"/>
-  <rect x="106" y="186" width="28" height="12" rx="3" fill="#7fd9a4"/>
+  <circle cx="172" cy="80" r="37" fill="#f5b942"/>
+  <path d="M104 18 C 104 18 22 124 22 184 C 22 226 58 254 104 254 C 150 254 186 226 186 184 C 186 124 104 18 104 18 Z"
+        fill="#2f8fd1" stroke="#dff1fb" stroke-width="8"/>
+  <rect x="64" y="158" width="80" height="22" rx="6" fill="#dff1fb"/>
+  <rect x="64" y="188" width="80" height="22" rx="6" fill="#dff1fb"/>
+  <rect x="64" y="218" width="50" height="22" rx="6" fill="#7fd9a4"/>
 </svg>
